@@ -1,5 +1,5 @@
 initial = (0,0)
-target = (0,3)
+target = (3,0)
 
 def generateConstraints(allowedSteps):
     f = open('constraints.sl','w')
@@ -7,6 +7,7 @@ def generateConstraints(allowedSteps):
     grammar = """
 (synth-fun move ((currX Int) (currY Int)) Int
  ((Start Int (
+  0 ;no move
   1 ;left
   2 ;right
   3 ;down
@@ -38,7 +39,8 @@ def generateConstraints(allowedSteps):
 
     f.write(grammar)
     f.write(helperFunctions)
-
+    
+    """
     constr = "(constraint (let ((x0 Int "+str(initial[0])+") (y0 Int "+str(initial[1])+") (m0 Int (move "+str(initial[0])+" "+str(initial[1])+"))) "
     for i in range(allowedSteps-1):
         constr += "(let ((x"+str(i+1)+" Int (interpret-move-x x"+str(i)+" m"+str(i)+")) (y"+str(i+1)+" Int (interpret-move-y y"+str(i)+" m"+str(i)+"))) (let ((m"+str(i+1)+" Int (move x"+str(i+1)+" y"+str(i+1)+")))"
@@ -47,20 +49,20 @@ def generateConstraints(allowedSteps):
         constr += "))"
     constr += "))\n"
     f.write(constr)
-
     """
-    counter = 0
-    currentConstraint = "(let move Int (motion "+str(initial[0])+" "+str(initial[1])+"))"
+
+    currentX = str(initial[0])
+    currentY = str(initial[1])
+    currentMove = "(move "+currentX+" "+currentY+")"
     for i in range(allowedSteps-1):
-        newConstraint = "(motion (interpret-move-x "+currentConstraint+") (interpret-move-y "+currentConstraint+"))"
-        currentConstraint = newConstraint
+        currentX = "(interpret-move-x "+currentX+" "+currentMove+")"
+        currentY = "(interpret-move-y "+currentY+" "+currentMove+")"
+        currentMove = "(move "+currentX+" "+currentY+")"
 
-    f.write("(constraint (= (interpret-move-x "+currentConstraint+") "+str(target[0])+"))\n")
-    f.write("(constraint (= (interpret-move-y "+currentConstraint+") "+str(target[1])+"))\n")
-   
-    """
+    f.write("(constraint (= (interpret-move-x "+currentX+" "+currentMove+") "+str(target[0])+"))\n")
+    f.write("(constraint (= (interpret-move-y "+currentY+" "+currentMove+") "+str(target[1])+"))\n")
  
     f.write("\n(check-synth)")
     f.close()
 
-generateConstraints(1)
+generateConstraints(7)
