@@ -43,18 +43,18 @@ def generateConstraints(allowedSteps):
 
 	f.write(grammar)
 	f.write(helperFunctions)
-
+	
+	body = "(let ((x0 Int "+str(initial[0])+") (y0 Int "+str(initial[1])+") (m0 Int (move "+str(initial[0])+" "+str(initial[1])+"))) "
+	for i in range(allowedSteps-1):
+		body += "(let ((x"+str(i+1)+" Int (interpret-move-x x"+str(i)+" m"+str(i)+")) (y"+str(i+1)+" Int (interpret-move-y y"+str(i)+" m"+str(i)+"))) (let ((m"+str(i+1)+" Int (move x"+str(i+1)+" y"+str(i+1)+")))"
+	body += "(and (= (interpret-move-x x"+str(allowedSteps-1)+" m"+str(allowedSteps-1)+") "+str(target[0])+") (= (interpret-move-y y"+str(allowedSteps-1)+" m"+str(allowedSteps-1)+") "+str(target[1])+"))"
+	for i in range(allowedSteps-1):
+		body += "))"
+	body += ")\n"
+	f.write("(define-fun target-reached () Bool \n"+body+"\n) \n \n")
+	f.write("(constraint (target-reached))")
+	
 	"""
-	constr = "(constraint (let ((x0 Int "+str(initial[0])+") (y0 Int "+str(initial[1])+") (m0 Int (move "+str(initial[0])+" "+str(initial[1])+"))) "
-		for i in range(allowedSteps-1):
-			constr += "(let ((x"+str(i+1)+" Int (interpret-move-x x"+str(i)+" m"+str(i)+")) (y"+str(i+1)+" Int (interpret-move-y y"+str(i)+" m"+str(i)+"))) (let ((m"+str(i+1)+" Int (move x"+str(i+1)+" y"+str(i+1)+")))"
-				constr += "(and (= (interpret-move-x x"+str(allowedSteps-1)+" m"+str(allowedSteps-1)+") "+str(target[0])+") (= (interpret-move-y y"+str(allowedSteps-1)+" m"+str(allowedSteps-1)+") "+str(target[1])+"))"
-				for i in range(allowedSteps-1):
-					constr += "))"
-	constr += "))\n"
-	f.write(constr)
-	"""
-
 	currentX = str(initial[0])
 	currentY = str(initial[1])
 	currentMove = "(move "+currentX+" "+currentY+")"
@@ -65,6 +65,7 @@ def generateConstraints(allowedSteps):
 
 		f.write("(constraint (= (interpret-move-x "+currentX+" "+currentMove+") "+str(target[0])+"))\n")
 		f.write("(constraint (= (interpret-move-y "+currentY+" "+currentMove+") "+str(target[1])+"))\n")
+	"""
 
 	f.write("\n(check-synth)")
 	f.close()
