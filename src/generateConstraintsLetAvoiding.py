@@ -8,12 +8,15 @@ def generateConstraints(allowedSteps):
 	grammar = """
 		(synth-fun move ((currX Int) (currY Int)) Int
 			((Start Int (
-				0 ;no move
+				MoveId
+				(ite StartBool Start Start)))
+  (MoveId Int (
+				0  ;no move
 				1 ;left
 				2 ;right
 				3 ;down
 				4 ;up
-				(ite StartBool Start Start)))
+  	))
 	(CondInt Int (
 		currX
 		currY
@@ -40,7 +43,6 @@ def generateConstraints(allowedSteps):
 			(ite (= move 3) (- y 1) (ite (= move 4) (+ y 1) y))
 			) \n \n
 		"""
-
 	f.write(grammar)
 	f.write(helperFunctions)
 	
