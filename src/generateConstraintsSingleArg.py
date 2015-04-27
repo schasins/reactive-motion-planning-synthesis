@@ -50,14 +50,24 @@ def generateConstraints(allowedSteps):
 			(=   CondInt CondInt)
 			(>=  CondInt CondInt))))) \n \n """
 
+	grammar2 = """
+		(synth-fun all-moves ((startPoint Int)) Int
+			((Start Int (
+				(move Start)
+				startPoint))))\n\n"""
+
 	f.write(helperFunctions)
 	f.write(grammar)
+	f.write(grammar2)
 	
+	"""
 	currProg = str(coordsToPoint(initial[0],initial[1]))
 	for i in range(allowedSteps):
 		currProg = "(move "+currProg+")"
 
 	f.write("(constraint (= "+currProg+" "+str(coordsToPoint(target[0],target[1]))+"))\n")
+	"""
+	f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
 
 	f.write("\n(check-synth)")
 	f.close()
