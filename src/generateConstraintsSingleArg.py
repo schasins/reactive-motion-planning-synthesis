@@ -17,13 +17,29 @@ def generateConstraints(allowedSteps):
 											(ite (= move 2) (+ currPoint 1) 
 																			(ite (= move 3) (- currPoint """+width+""") 
 																											(ite (= move 4) (+ currPoint """+width+""") currPoint))))
-		) \n \n
+		)
+		\n
 		"""
+
+	getYCoordHelperFunction ="(define-fun get-y ((currPoint Int)) Int \n"
+	for i in range(dimensions[1]-1):
+		getYCoordHelperFunction+="(ite (< currPoint "+str(dimensions[0]*(i+1))+") "+str(i)+" "
+	getYCoordHelperFunction+=str(dimensions[1]-1)
+	for i in range(dimensions[1]-1):
+		getYCoordHelperFunction+=")"
+	getYCoordHelperFunction+=")\n"
+
+	getXCoordHelperFunction ="""
+		(define-fun get-x ((currPoint Int)) Int
+			(- currPoint (get-y currPoint)))
+		"""
+
+	helperFunctions+=getYCoordHelperFunction+getXCoordHelperFunction+"\n\n"
 
 	grammar = """
 		(synth-fun move ((currPoint Int)) Int
 			((Start Int (
-				(interpret-move MoveId currPoint)
+				(interpret-move currPoint MoveId)
 				(ite StartBool Start Start)))
   (MoveId Int (
 				0 ;no move
@@ -33,8 +49,8 @@ def generateConstraints(allowedSteps):
 				4 ;up
   	))
 	(CondInt Int (
-		(/ currPoint """+width+""") ;y coord
-		(- currPoint (/ currPoint """+width+""")) ;x coord
+		(get-y currPoint) ;y coord
+		(get-x currPoint) ;x coord
 		(+ CondInt CondInt)
 		(- CondInt CondInt)
 		-1
@@ -58,18 +74,17 @@ def generateConstraints(allowedSteps):
 
 	f.write(helperFunctions)
 	f.write(grammar)
-	f.write(grammar2)
+	#f.write(grammar2)
 	
-	"""
+	
 	currProg = str(coordsToPoint(initial[0],initial[1]))
 	for i in range(allowedSteps):
 		currProg = "(move "+currProg+")"
 
 	f.write("(constraint (= "+currProg+" "+str(coordsToPoint(target[0],target[1]))+"))\n")
-	"""
-	f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
+	
+	#f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
 
 	f.write("\n(check-synth)")
 	f.close()
 
-generateConstraints(7)
