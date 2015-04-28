@@ -3,7 +3,7 @@ target = (3,3)
 dimensions = (5,6)
 
 def coordsToPoint(x,y):
-	return y*dimensions[1]+x
+	return y*dimensions[0]+x
 
 def generateConstraints(allowedSteps):
 	f = open('constraints.sl','w')
@@ -31,10 +31,15 @@ def generateConstraints(allowedSteps):
 
 	getXCoordHelperFunction ="""
 		(define-fun get-x ((currPoint Int)) Int
-			(- currPoint (get-y currPoint)))
+			(- currPoint (* (get-y currPoint) """+width+""")))
 		"""
 
 	helperFunctions+=getYCoordHelperFunction+getXCoordHelperFunction+"\n\n"
+
+	solution = """
+	(define-fun soln ((currPoint Int)) Int
+		(ite (<= (get-y currPoint) 2) (interpret-move currPoint 4) (ite (<= (get-x currPoint) 2) (interpret-move currPoint 2) (interpret-move currPoint 0))))
+	"""
 
 	grammar = """
 		(synth-fun move ((currPoint Int)) Int
@@ -73,6 +78,8 @@ def generateConstraints(allowedSteps):
 				startPoint))))\n\n"""
 
 	f.write(helperFunctions)
+
+	f.write(solution)
 	f.write(grammar)
 	#f.write(grammar2)
 	
@@ -88,3 +95,4 @@ def generateConstraints(allowedSteps):
 	f.write("\n(check-synth)")
 	f.close()
 
+generateConstraints(6)
