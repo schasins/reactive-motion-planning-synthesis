@@ -1,6 +1,7 @@
 initial = (0,0)
 target = (3,3)
 dimensions = (5,6)
+motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
 
 def coordsToPoint(x,y):
 	return y*dimensions[0]+x
@@ -10,6 +11,16 @@ def generateConstraints(allowedSteps):
 	f.write('(set-logic LIA)\n')
 
 	width = str(dimensions[0])
+
+	helperFunction = "(define-fun interpret-move (( currPoint Int ) ( move Int)) Int"
+	for i in range(len(motion_primitives)):
+		final_position = motion_primitives[i][-1]
+		helperFunction+= "\n(ite (= move "+str(i)+") ( + ( + (currPoint "+str(final_position[0])+" "+str(final_position[1]*dimensions[0])+"))"
+	helperFunction += "\ncurrPoint"
+	for i in range(len(motion_primitives)):
+		helperFunction += ")"
+	helperFunction+="\n"	
+
 
 	helperFunctions = """
 		(define-fun interpret-move (( currPoint Int ) ( move Int )) Int
@@ -77,7 +88,7 @@ def generateConstraints(allowedSteps):
 				(move Start)
 				startPoint))))\n\n"""
 
-	f.write(helperFunctions)
+	f.write(helperFunction)
 
 	f.write(solution)
 	f.write(grammar)
