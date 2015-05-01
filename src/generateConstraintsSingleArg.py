@@ -6,31 +6,25 @@ motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
 def coordsToPoint(x,y):
 	return y*dimensions[0]+x
 
+def generateInterpretMove(motion_primitives):
+	string = "(define-fun interpret-move (( currPoint Int ) ( move Int)) Int"
+	return string+generateInterpretMoveHelper(motion_primitives,0)+"\n\n"
+
+def generateInterpretMoveHelper(motion_primitives,i):
+	if (len(motion_primitives) < 1):
+		return "\ncurrPoint"
+	final_position = motion_primitives[0][-1]
+	string = "\n(ite (= move "+str(i)+") ( + ( + (currPoint "+str(final_position[0])+" "+str(final_position[1]*dimensions[0])+"))"
+	return string+generateInterpretMoveHelper(motion_primitives[1:],i+1)+")"
+
+
 def generateConstraints(allowedSteps):
 	f = open('constraints.sl','w')
 	f.write('(set-logic LIA)\n')
 
 	width = str(dimensions[0])
 
-	helperFunction = "(define-fun interpret-move (( currPoint Int ) ( move Int)) Int"
-	for i in range(len(motion_primitives)):
-		final_position = motion_primitives[i][-1]
-		helperFunction+= "\n(ite (= move "+str(i)+") ( + ( + (currPoint "+str(final_position[0])+" "+str(final_position[1]*dimensions[0])+"))"
-	helperFunction += "\ncurrPoint"
-	for i in range(len(motion_primitives)):
-		helperFunction += ")"
-	helperFunction+="\n"	
-
-
-	helperFunctions = """
-		(define-fun interpret-move (( currPoint Int ) ( move Int )) Int
-			(ite (= move 1) (- currPoint 1) 
-											(ite (= move 2) (+ currPoint 1) 
-																			(ite (= move 3) (- currPoint """+width+""") 
-																											(ite (= move 4) (+ currPoint """+width+""") currPoint))))
-		)
-		\n
-		"""
+	helperFunction = generateInterpretMove(motion_primitives)
 
 	getYCoordHelperFunction ="(define-fun get-y ((currPoint Int)) Int \n"
 	for i in range(dimensions[1]-1):
@@ -45,7 +39,7 @@ def generateConstraints(allowedSteps):
 			(- currPoint (* (get-y currPoint) """+width+""")))
 		"""
 
-	helperFunctions+=getYCoordHelperFunction+getXCoordHelperFunction+"\n\n"
+	helperFunction+=getYCoordHelperFunction+getXCoordHelperFunction+"\n\n"
 
 	solution = """
 	(define-fun soln ((currPoint Int)) Int
