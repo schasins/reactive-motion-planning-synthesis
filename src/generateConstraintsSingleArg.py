@@ -51,12 +51,7 @@ def generateConstraints(allowedSteps):
 			((Start Int (
 				(interpret-move currPoint MoveId)
 				(ite StartBool Start Start)))
-  (MoveId Int (
-				0 ;no move
-				1 ;left
-				2 ;right
-				3 ;down
-				4 ;up
+  (MoveId Int ("""+("\n").join(map(str,range(len(motion_primitives))))+"""
   	))
 	(CondInt Int (
 		(get-y currPoint) ;y coord
