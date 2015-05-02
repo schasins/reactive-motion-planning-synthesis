@@ -8,15 +8,37 @@ def coordsToPoint(x,y):
 
 def generateInterpretMove(motion_primitives):
 	string = "(define-fun interpret-move (( currPoint Int ) ( move Int)) Int"
-	return string+generateInterpretMoveHelper(motion_primitives,0)+"\n\n"
+	return string+generateInterpretMoveHelper(motion_primitives,0)+")\n\n"
 
 def generateInterpretMoveHelper(motion_primitives,i):
 	if (len(motion_primitives) < 1):
+		#we've run out of new motion primitives!
 		return "\ncurrPoint"
-	final_position = motion_primitives[0][-1]
-	string = "\n(ite (= move "+str(i)+") ( + ( + (currPoint "+str(final_position[0])+" "+str(final_position[1]*dimensions[0])+"))"
-	return string+generateInterpretMoveHelper(motion_primitives[1:],i+1)+")"
 
+	final_position = motion_primitives[0][-1]
+
+	if (final_position[0] != 0 and final_position[1] != 0):
+		string = ("\n(ite (= move "+str(i)+") \
+                   (ite (or \
+                      (or (< (+ (get-x currPoint) "+str(final_position[0])+") 0) (>= (+ (get-x currPoint) "+str(final_position[0])+") "+str(dimensions[0])+")) \
+                      (or (< (+ (get-y currPoint) "+str(final_position[1])+") 0) (>= (+ (get-y currPoint) "+str(final_position[1])+") "+str(dimensions[1])+"))) \
+                          currPoint ( + ( + (currPoint "+str(final_position[0])+" "+str(final_position[1]*dimensions[0])+")))) ")
+
+	elif (final_position[0] != 0):
+		string = "\n(ite (= move "+str(i)+") \
+                   (ite (or (< (+ (get-x currPoint) "+str(final_position[0])+") 0) (>= (+ (get-x currPoint) "+str(final_position[0])+") "+str(dimensions[0])+")) \
+                      currPoint (+ currPoint  "+str(final_position[0])+")) "
+
+	elif (final_position[1] != 0):
+		string = "\n(ite (= move "+str(i)+") \
+                   (ite (or (< (+ (get-y currPoint) "+str(final_position[1])+") 0) (>= (+ (get-y currPoint) "+str(final_position[1])+") "+str(dimensions[1])+")) \
+                      currPoint (+ currPoint  "+str(final_position[1]*dimensions[0])+")) "
+
+	else:
+		#both 0
+		string = "\n(ite (= move "+str(i)+") currPoint "
+
+        return string+generateInterpretMoveHelper(motion_primitives[1:],i+1)+")"
 
 def generateConstraints(allowedSteps):
 	f = open('constraints.sl','w')
@@ -39,7 +61,7 @@ def generateConstraints(allowedSteps):
 			(- currPoint (* (get-y currPoint) """+width+""")))
 		"""
 
-	helperFunction+=getYCoordHelperFunction+getXCoordHelperFunction+"\n\n"
+        macros = getYCoordHelperFunction+getXCoordHelperFunction+helperFunction+"\n\n"
 
 	solution = """
 	(define-fun soln ((currPoint Int)) Int
@@ -71,13 +93,7 @@ def generateConstraints(allowedSteps):
 			(=   CondInt CondInt)
 			(>=  CondInt CondInt))))) \n \n """
 
-	grammar2 = """
-		(synth-fun all-moves ((startPoint Int)) Int
-			((Start Int (
-				(move Start)
-				startPoint))))\n\n"""
-
-	f.write(helperFunction)
+	f.write(macros)
 
 	f.write(solution)
 	f.write(grammar)
