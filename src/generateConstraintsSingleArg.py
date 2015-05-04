@@ -31,7 +31,7 @@ def generateCombinationFunction(funcName, l1, l2):
 
 combinationFunctions = {}
 def generateNoOveralap(fun_name, motion_primitives, obstacle_motion_primitives):
-	string = "(define-fun "+fun_name+" (( currPoint Int ) ( move Int) (obstacleCurrPoint Int) (obstacleMove Int)) Bool"
+	string = "(define-fun "+fun_name+" (( currPoint Int ) ( move Int) (obstacleCurrPoint Int) (obstacleMove Int)) Bool\n\t(= 1"
 	for i in range(len(motion_primitives)):
 		motion_primitive = motion_primitives[i]
 		string+="\n\t(ite (= move "+str(i)+") "
@@ -41,7 +41,7 @@ def generateNoOveralap(fun_name, motion_primitives, obstacle_motion_primitives):
 			combinationFunc = "no-overlap-one-move-combination-"+str(len(motion_primitive)+1)+"-"+str(len(obstacle_motion_primitive)+1) #plus one because must add initial position
 			if combinationFunc not in combinationFunctions:
 				combinationFunctions[combinationFunc] = generateCombinationFunction(combinationFunc,len(motion_primitive)+1, len(obstacle_motion_primitive)+1)
-			string+="("+combinationFunc
+			string+="(ite ("+combinationFunc
 			string+=" currPoint"
 			for k in range(len(motion_primitive)):
 				step = motion_primitive[k]
@@ -50,10 +50,10 @@ def generateNoOveralap(fun_name, motion_primitives, obstacle_motion_primitives):
 			for k in range(len(obstacle_motion_primitive)):
 				step = obstacle_motion_primitive[k]
 				string += " (+ (+ obstacleCurrPoint "+str(step[0])+") "+ str(step[1]*dimensions[0])+")"
-			string+=")"
-		string+=" false"+(")"*len(obstacle_motion_primitives)) #wasn't any of the moves we recognize, so should fail
-	string+=" false"+(")"*len(motion_primitives)) #wasn't any of the moves we recognize, so should fail
-	return string+")\n\n"
+			string+=") 1 0)"
+		string+=" 0"+(")"*len(obstacle_motion_primitives)) #wasn't any of the moves we recognize, so should fail
+	string+=" 0"+(")"*len(motion_primitives)) #wasn't any of the moves we recognize, so should fail
+	return string+"))\n\n"
 
 def generateNoOverlapsOneStep(numObstacles):
 	#helper func
