@@ -39,7 +39,7 @@ def generateNoOveralap(fun_name, motion_primitives, obstacle_motion_primitives):
 			string+=andItems(stepCombinations)
 		string+=" false"+(")"*len(obstacle_motion_primitives)) #wasn't any of the moves we recognize, so should fail
 	string+=" false"+(")"*len(motion_primitives)) #wasn't any of the moves we recognize, so should fail
-	return string+"\n\n"
+	return string+")\n\n"
 
 def generateNoOverlapsOneStep(numObstacles):
 	#helper func
