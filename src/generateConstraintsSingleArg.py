@@ -20,23 +20,37 @@ def andItems(ls):
 	andstring+="true"+(")"*len(ls))
 	return andstring
 
+def generateCombinationFunction(funcName, l1, l2):
+	string = "(define-fun "+funcName+" ("+" ".join(map((lambda x: "(p"+str(x)+" Int)"),range(l1+l2)))+") Bool"
+	stepCombinations = [];
+	for i in range(l1):
+		for j in range(l2):
+			stepCombinations.append("(not (= p"+str(i)+" p"+str(l1+j)+"))")
+	string+="\n\t"+andItems(stepCombinations)+")\n\n"
+	return string
+
+combinationFunctions = {}
 def generateNoOveralap(fun_name, motion_primitives, obstacle_motion_primitives):
 	string = "(define-fun "+fun_name+" (( currPoint Int ) ( move Int) (obstacleCurrPoint Int) (obstacleMove Int)) Bool"
 	for i in range(len(motion_primitives)):
 		motion_primitive = motion_primitives[i]
-		motion_primitive.append([0,0])
 		string+="\n\t(ite (= move "+str(i)+") "
 		for j in range(len(obstacle_motion_primitives)):
 			string+="\n\t\t(ite (= obstacleMove "+str(j)+") "
 			obstacle_motion_primitive = obstacle_motion_primitives[j]
-			obstacle_motion_primitive.append([0,0])
-			stepCombinations = [];
+			combinationFunc = "no-overlap-one-move-combination-"+str(len(motion_primitive)+1)+"-"+str(len(obstacle_motion_primitive)+1) #plus one because must add initial position
+			if combinationFunc not in combinationFunctions:
+				combinationFunctions[combinationFunc] = generateCombinationFunction(combinationFunc,len(motion_primitive)+1, len(obstacle_motion_primitive)+1)
+			string+="("+combinationFunc
+			string+=" currPoint"
 			for k in range(len(motion_primitive)):
 				step = motion_primitive[k]
-				for l in range(len(obstacle_motion_primitive)):
-					ostep = obstacle_motion_primitive[l]
-					stepCombinations.append("(not (= (+ (+ currPoint "+str(step[0])+") "+ str(step[1]*dimensions[0])+") (+ (+ obstacleCurrPoint "+str(ostep[0])+") "+ str(ostep[1]*dimensions[0])+")))")
-			string+=andItems(stepCombinations)
+				string += " (+ (+ currPoint "+str(step[0])+") "+ str(step[1]*dimensions[0])+")"
+			string+=" obstacleCurrPoint"
+			for k in range(len(obstacle_motion_primitive)):
+				step = obstacle_motion_primitive[k]
+				string += " (+ (+ obstacleCurrPoint "+str(step[0])+") "+ str(step[1]*dimensions[0])+")"
+			string+=")"
 		string+=" false"+(")"*len(obstacle_motion_primitives)) #wasn't any of the moves we recognize, so should fail
 	string+=" false"+(")"*len(motion_primitives)) #wasn't any of the moves we recognize, so should fail
 	return string+")\n\n"
@@ -78,20 +92,20 @@ def generateInterpretMoveHelper(motion_primitives,i):
 
 	if (final_position[0] != 0 and final_position[1] != 0):
 		string = ("\n(ite (= move "+str(i)+") \
-                   (ite (or \
-                      (or (< (+ (get-x currPoint) "+str(final_position[0])+") 0) (>= (+ (get-x currPoint) "+str(final_position[0])+") "+str(dimensions[0])+")) \
-                      (or (< (+ (get-y currPoint) "+str(final_position[1])+") 0) (>= (+ (get-y currPoint) "+str(final_position[1])+") "+str(dimensions[1])+"))) \
-                          currPoint ( + ( + (currPoint "+str(final_position[0])+" "+str(final_position[1]*dimensions[0])+")))) ")
+ (ite (or \
+    (or (< (+ (get-x currPoint) "+str(final_position[0])+") 0) (>= (+ (get-x currPoint) "+str(final_position[0])+") "+str(dimensions[0])+")) \
+    (or (< (+ (get-y currPoint) "+str(final_position[1])+") 0) (>= (+ (get-y currPoint) "+str(final_position[1])+") "+str(dimensions[1])+"))) \
+        currPoint ( + ( + (currPoint "+str(final_position[0])+" "+str(final_position[1]*dimensions[0])+")))) ")
 
 	elif (final_position[0] != 0):
 		string = "\n(ite (= move "+str(i)+") \
-                   (ite (or (< (+ (get-x currPoint) "+str(final_position[0])+") 0) (>= (+ (get-x currPoint) "+str(final_position[0])+") "+str(dimensions[0])+")) \
-                      currPoint (+ currPoint  "+str(final_position[0])+")) "
+ (ite (or (< (+ (get-x currPoint) "+str(final_position[0])+") 0) (>= (+ (get-x currPoint) "+str(final_position[0])+") "+str(dimensions[0])+")) \
+    currPoint (+ currPoint  "+str(final_position[0])+")) "
 
 	elif (final_position[1] != 0):
 		string = "\n(ite (= move "+str(i)+") \
-                   (ite (or (< (+ (get-y currPoint) "+str(final_position[1])+") 0) (>= (+ (get-y currPoint) "+str(final_position[1])+") "+str(dimensions[1])+")) \
-                      currPoint (+ currPoint  "+str(final_position[1]*dimensions[0])+")) "
+ (ite (or (< (+ (get-y currPoint) "+str(final_position[1])+") 0) (>= (+ (get-y currPoint) "+str(final_position[1])+") "+str(dimensions[1])+")) \
+    currPoint (+ currPoint  "+str(final_position[1]*dimensions[0])+")) "
 
 	else:
 		#both 0
@@ -190,7 +204,9 @@ def generateConstraints(allowedSteps):
 
 	obstaclesNoOverlapsOneStep = generateNoOverlapsOneStep(len(obstacles_initial))
 
-	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+obstacleNoOverlaps+obstaclesNoOverlapsOneStep+"\n\n"
+	moveCombinations = ("\n\n").join(combinationFunctions.values()) #combinationFunctions have been generated over the course of making the no overlaps code
+
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+moveCombinations+obstacleNoOverlaps+obstaclesNoOverlapsOneStep+"\n\n"
 
 	obstaclePositions = ""
 	for i in range(len(obstacles_initial)):
