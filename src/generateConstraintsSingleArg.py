@@ -269,7 +269,7 @@ def generateConstraints(allowedSteps):
 		noOverlapItems.append(string)
 	noOverlapsConstraint = andItems(noOverlapItems)
 
-	f.write("(or \n\t(and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")\n\t(not "+allowableObstacleMovesConstraint+"))")
+	f.write("(constraint (or \n\t(and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")\n\t(not "+allowableObstacleMovesConstraint+")))")
 	
 	#f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
 
