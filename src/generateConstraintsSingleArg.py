@@ -1,13 +1,20 @@
+dimensions = (5,6)
+
 initial = (0,0)
 target = (3,3)
-dimensions = (5,6)
 motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
+
+obstacles_initial = [(1,5),(2,5)]
+obstacles_motion_primitives_list = [
+	[[[0,0]],[[0,1]],[[0,-1]]], #first obstacle
+	[[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
+]
 
 def coordsToPoint(x,y):
 	return y*dimensions[0]+x
 
-def generateInterpretMove(motion_primitives):
-	string = "(define-fun interpret-move (( currPoint Int ) ( move Int)) Int"
+def generateInterpretMove(fun_name, motion_primitives):
+	string = "(define-fun "+fun_name+" (( currPoint Int ) ( move Int)) Int"
 	return string+generateInterpretMoveHelper(motion_primitives,0)+")\n\n"
 
 def generateInterpretMoveHelper(motion_primitives,i):
@@ -40,13 +47,35 @@ def generateInterpretMoveHelper(motion_primitives,i):
 
         return string+generateInterpretMoveHelper(motion_primitives[1:],i+1)+")"
 
+def consolidateMotionPrimitives(motion_primitives):
+	final_position_to_index = {}
+	for i in range(len(motion_primitives)):
+		motion_primitive = motion_primitives[i]
+		final_position = motion_primitive[-1]
+		final_position_str = str(final_position)
+		if final_position_str in final_position_to_index:
+			intermediate_steps = motion_primitive[0:-1]
+			preexisting_primitive = motion_primitives[final_position_to_index[final_position_str]]
+			for step in intermediate_steps:
+				if step not in preexisting_primitive:
+					preexisting_primitive.insert(0,step)
+
+			motion_primitives[final_position_to_index[final_position_str]] = preexisting_primitive
+		else:
+			final_position_to_index[final_position_str] = i
+	final_primitives = []
+	for i in final_position_to_index.values():
+		final_primitives.append(motion_primitives[i])
+	return final_primitives
+
+#test
+#print [[1, 0], [0, 1], [1, 1]] in consolidateMotionPrimitives([[[0,0]],[[0,1],[1,1]],[[1,0],[1,1]],[[0,-1]],[[-1,0]]])
+
 def generateConstraints(allowedSteps):
 	f = open('constraints.sl','w')
 	f.write('(set-logic LIA)\n')
 
 	width = str(dimensions[0])
-
-	helperFunction = generateInterpretMove(motion_primitives)
 
 	getYCoordHelperFunction ="(define-fun get-y ((currPoint Int)) Int \n"
 	for i in range(dimensions[1]-1):
@@ -61,7 +90,18 @@ def generateConstraints(allowedSteps):
 			(- currPoint (* (get-y currPoint) """+width+""")))
 		"""
 
-        macros = getYCoordHelperFunction+getXCoordHelperFunction+helperFunction+"\n\n"
+	robotMoves = generateInterpretMove("interpret-move", motion_primitives)
+	#first preprocess the moves so that all intermediate stages that lead to the same final position are consolidated
+	#assumption is that the obstacle can be in any of those intermediate positions if gets to the given final position
+	#that way we won't have to deal later with the fact that we mustn't intercept with either, once we've found one primitive
+	#that matches the move, we don't have to look for others, don't have to handle two or more
+	obstacleMoves = ""
+	for i in range(len(obstacles_motion_primitives_list)):
+		obstacles_motion_primitives_list[i] = consolidateMotionPrimitives(obstacles_motion_primitives_list[i])
+		newMoves = generateInterpretMove("interpret-move-obstacle-"+(str(i)), obstacles_motion_primitives_list[i])
+		obstacleMoves+=newMoves
+
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+"\n\n"
 
 	solution = """
 	(define-fun soln ((currPoint Int)) Int
