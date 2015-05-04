@@ -35,7 +35,7 @@ def generateNoOveralap(fun_name, motion_primitives, obstacle_motion_primitives):
 				step = motion_primitive[k]
 				for l in range(len(obstacle_motion_primitive)):
 					ostep = obstacle_motion_primitive[l]
-					stepCombinations.append("(!= (+ (+ currPoint "+str(step[0])+") "+ str(step[1]*dimensions[0])+") (+ (+ obstacleCurrPoint "+str(ostep[0])+") "+ str(ostep[1]*dimensions[0])+"))")
+					stepCombinations.append("(not (= (+ (+ currPoint "+str(step[0])+") "+ str(step[1]*dimensions[0])+") (+ (+ obstacleCurrPoint "+str(ostep[0])+") "+ str(ostep[1]*dimensions[0])+")))")
 			string+=andItems(stepCombinations)
 		string+=" false"+(")"*len(obstacle_motion_primitives)) #wasn't any of the moves we recognize, so should fail
 	string+=" false"+(")"*len(motion_primitives)) #wasn't any of the moves we recognize, so should fail
@@ -164,9 +164,6 @@ def generateConstraints(allowedSteps):
 	for i in range(len(obstacles_initial)):
 		obstacleParams+=" (o"+str(i)+" Int)"
 		obstacleArgs+=" o"+str(i)
-	synthWrapper = """
-(define-fun move-wrapper ((currPoint Int)"""+obstacleParams+""") Int	
-	(interpret-move currPoint (move currPoint """+obstacleArgs+""")))\n\n"""
 
 	robotMoves = generateInterpretMove("interpret-move", motion_primitives)
 	#first preprocess the moves so that all intermediate stages that lead to the same final position are consolidated
@@ -193,7 +190,7 @@ def generateConstraints(allowedSteps):
 
 	obstaclesNoOverlapsOneStep = generateNoOverlapsOneStep(len(obstacles_initial))
 
-	macros = getYCoordHelperFunction+getXCoordHelperFunction+synthWrapper+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+obstacleNoOverlaps+obstaclesNoOverlapsOneStep+"\n\n"
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+obstacleNoOverlaps+obstaclesNoOverlapsOneStep+"\n\n"
 
 	obstaclePositions = ""
 	for i in range(len(obstacles_initial)):
@@ -234,9 +231,15 @@ def generateConstraints(allowedSteps):
 	f.write(macros)
 	f.write(obstaclePositions)
 
-	f.write(solution)
+	#f.write(solution)
 	f.write(grammar)
 	#f.write(grammar2)
+
+	synthWrapper = """
+(define-fun move-wrapper ((currPoint Int)"""+obstacleParams+""") Int	
+	(interpret-move currPoint (move currPoint """+obstacleArgs+""")))\n\n"""
+
+	f.write(synthWrapper);
 
 	def getLocationInSteps(steps,obstacles):
 		currProg = str(coordsToPoint(initial[0],initial[1]))
