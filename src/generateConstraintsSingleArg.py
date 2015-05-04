@@ -55,7 +55,7 @@ def generateNoOverlapsOneStep(numObstacles):
 	#outer func
 	string+="(define-fun no-overlaps-one-step ((currPoint Int) "
 	for i in range(numObstacles):
-		string+=" o"+str(i)+"-0 o"+str(i)+"-1"
+		string+=" (o"+str(i)+"-0 Int) (o"+str(i)+"-1 Int)"
 	string+=") Bool\n\t(no-overlaps-one-step-helper currPoint (move currPoint"
 	for i in range(numObstacles):
 		string+=" o"+str(i)+"-0"
