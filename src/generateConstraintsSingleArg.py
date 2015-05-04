@@ -46,7 +46,7 @@ def generateNoOverlapsOneStep(numObstacles):
 	string="(define-fun no-overlaps-one-step-helper ((currPoint Int) (move Int)"
 	for i in range(numObstacles):
 		string+= " (o"+str(i)+"-t Int) (o"+str(i)+"move Int)"
-	string+=")\n\t"
+	string+=") Bool\n\t"
 	noOverlaps=[]
 	for i in range(numObstacles):
 		noOverlaps.append("(no-overlaps-"+str(i)+" currPoint move o"+str(i)+"-t o"+str(i)+"move)")
@@ -56,7 +56,7 @@ def generateNoOverlapsOneStep(numObstacles):
 	string+="(define-fun no-overlaps-one-step ((currPoint Int) "
 	for i in range(numObstacles):
 		string+=" o"+str(i)+"-0 o"+str(i)+"-1"
-	string+=")\n\t(no-overlaps-one-step-helper currPoint (move currPoint"
+	string+=") Bool\n\t(no-overlaps-one-step-helper currPoint (move currPoint"
 	for i in range(numObstacles):
 		string+=" o"+str(i)+"-0"
 	string+=")"
