@@ -77,7 +77,7 @@ def generateConstraints(allowedSteps):
 
 	width = str(dimensions[0])
 
-	getYCoordHelperFunction ="(define-fun get-y ((currPoint Int)) Int \n"
+	getYCoordHelperFunction ="\n\n(define-fun get-y ((currPoint Int)) Int \n"
 	for i in range(dimensions[1]-1):
 		getYCoordHelperFunction+="(ite (< currPoint "+str(dimensions[0]*(i+1))+") "+str(i)+" "
 	getYCoordHelperFunction+=str(dimensions[1]-1)
@@ -86,9 +86,8 @@ def generateConstraints(allowedSteps):
 	getYCoordHelperFunction+=")\n"
 
 	getXCoordHelperFunction ="""
-		(define-fun get-x ((currPoint Int)) Int
-			(- currPoint (* (get-y currPoint) """+width+""")))
-		"""
+(define-fun get-x ((currPoint Int)) Int
+	(- currPoint (* (get-y currPoint) """+width+""")))\n\n"""
 
 	robotMoves = generateInterpretMove("interpret-move", motion_primitives)
 	#first preprocess the moves so that all intermediate stages that lead to the same final position are consolidated
@@ -103,46 +102,63 @@ def generateConstraints(allowedSteps):
 
 	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+"\n\n"
 
+	obstaclePositions = ""
+	for i in range(len(obstacles_initial)):
+		for j in range(allowedSteps):
+			obstaclePositions+="(declare-var o"+str(i)+"-"+str(j+1)+" Int)\n"
+
 	solution = """
 	(define-fun soln ((currPoint Int)) Int
 		(ite (<= (get-y currPoint) 2) (interpret-move currPoint 4) (ite (<= (get-x currPoint) 2) (interpret-move currPoint 2) (interpret-move currPoint 0))))
 	"""
 
+	obstacleArgs = ""
+	for i in range(len(obstacles_initial)):
+		obstacleArgs+=" (o"+str(i)+" Int)"
+
+	obstacleUses = ""
+	for i in range(len(obstacles_initial)):
+		obstacleUses+="\n\t\t(get-y o"+str(i)+")\n\t\t(get-x o"+str(i)+")"
+
 	grammar = """
-		(synth-fun move ((currPoint Int)) Int
-			((Start Int (
-				(interpret-move currPoint MoveId)
-				(ite StartBool Start Start)))
-  (MoveId Int ("""+("\n").join(map(str,range(len(motion_primitives))))+"""
+(synth-fun move ((currPoint Int)"""+obstacleArgs+""") Int
+	((Start Int (
+		(interpret-move currPoint MoveId)
+		(ite StartBool Start Start)))
+    (MoveId Int ("""+("\n\t\t").join(map(str,range(len(motion_primitives))))+"""
   	))
 	(CondInt Int (
 		(get-y currPoint) ;y coord
-		(get-x currPoint) ;x coord
+		(get-x currPoint) ;x coord"""+obstacleUses+"""
 		(+ CondInt CondInt)
 		(- CondInt CondInt)
 		-1
-		"""
-	for i in range(max(dimensions)):
-		grammar += str(i)+"\n"
-	grammar += """
+		"""+("\n\t\t").join(map(str,range(max(dimensions))))+"""
 				))
-		(StartBool Bool ((and StartBool StartBool)
-			(or  StartBool StartBool)
-			(not StartBool)
-			(<=  CondInt CondInt)
-			(=   CondInt CondInt)
-			(>=  CondInt CondInt))))) \n \n """
+	(StartBool Bool ((and StartBool StartBool)
+		(or  StartBool StartBool)
+		(not StartBool)
+		(<=  CondInt CondInt)
+		(=   CondInt CondInt)
+		(>=  CondInt CondInt))))) \n \n """
 
 	f.write(macros)
+	f.write(obstaclePositions)
 
 	f.write(solution)
 	f.write(grammar)
 	#f.write(grammar2)
 	
 	
+	obstacles = []
+	for i in range(len(obstacles_initial)):
+		obstacles.append([str(coordsToPoint(obstacles_initial[i][0],obstacles_initial[i][1]))])
+		for j in range(allowedSteps):
+			obstacles[i].append("o"+str(j+1))
+
 	currProg = str(coordsToPoint(initial[0],initial[1]))
 	for i in range(allowedSteps):
-		currProg = "(move "+currProg+")"
+		currProg = "(move "+currProg+" "+(" ").join(map(lambda x: x[i], obstacles))+")"
 
 	f.write("(constraint (= "+currProg+" "+str(coordsToPoint(target[0],target[1]))+"))\n")
 	
