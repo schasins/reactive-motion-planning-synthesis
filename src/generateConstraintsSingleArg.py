@@ -71,6 +71,15 @@ def consolidateMotionPrimitives(motion_primitives):
 #test
 #print [[1, 0], [0, 1], [1, 1]] in consolidateMotionPrimitives([[[0,0]],[[0,1],[1,1]],[[1,0],[1,1]],[[0,-1]],[[-1,0]]])
 
+def generateAllowableMoves(funName, interpretFunName, numMoves):
+	string = "(define-fun "+funName+" (( start Int ) ( end Int)) Int"
+	for i in range(numMoves):
+		string+="\n\t(or (= ("+interpretFunName+" start "+str(i)+") end)"
+	string+=" false"
+	for i in range(numMoves):
+		string+=")"
+	return string+")\n\n"
+
 def generateConstraints(allowedSteps):
 	f = open('constraints.sl','w')
 	f.write('(set-logic LIA)\n')
@@ -100,7 +109,11 @@ def generateConstraints(allowedSteps):
 		newMoves = generateInterpretMove("interpret-move-obstacle-"+(str(i)), obstacles_motion_primitives_list[i])
 		obstacleMoves+=newMoves
 
-	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+"\n\n"
+	obstacleAllowableMoves = ""
+	for i in range(len(obstacles_initial)):
+		obstacleAllowableMoves += generateAllowableMoves("allowable-move-obstacle-"+str(i),"interpret-move-obstacle-"+(str(i)),len(obstacles_motion_primitives_list[i]))
+
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+"\n\n"
 
 	obstaclePositions = ""
 	for i in range(len(obstacles_initial)):
@@ -160,7 +173,19 @@ def generateConstraints(allowedSteps):
 	for i in range(allowedSteps):
 		currProg = "(move "+currProg+" "+(" ").join(map(lambda x: x[i], obstacles))+")"
 
-	f.write("(constraint (= "+currProg+" "+str(coordsToPoint(target[0],target[1]))+"))\n")
+	correctProgConstraint = "(= "+currProg+" "+str(coordsToPoint(target[0],target[1]))+")"
+
+	allowableObstacleMovesConstraint = ""
+	allowableObstacleMoves = []
+	for i in range(len(obstacles)):
+		obstaclePlaces = obstacles[i]
+		for j in range(len(obstaclePlaces)-1):
+			allowableObstacleMoves.append("(allowable-move-obstacle-"+str(i)+" "+obstaclePlaces[j]+" "+obstaclePlaces[j+1]+")")
+	for i in range(len(allowableObstacleMoves)):
+		allowableObstacleMovesConstraint+="(and "+allowableObstacleMoves[i]+" "
+	allowableObstacleMovesConstraint+="true"+(")"*len(allowableObstacleMoves))
+
+	f.write("(or "+correctProgConstraint+" "+allowableObstacleMovesConstraint+")")
 	
 	#f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
 
