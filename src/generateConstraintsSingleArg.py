@@ -13,6 +13,34 @@ obstacles_motion_primitives_list = [
 def coordsToPoint(x,y):
 	return y*dimensions[0]+x
 
+def andItems(ls):
+	string = ""
+	for i in range(len(ls)):
+		string+="(and "+ls[i]+" "
+	string+="true"+(")"*len(ls))
+	return string
+
+def generateNoOveralap(fun_name, motion_primitives, obstacle_motion_primitives):
+	string = "\n\n(define-fun "+fun_name+" (( currPoint Int ) ( move Int) (obstacleCurrPoint Int) (obstacleMove Int)) Bool"
+	for i in range(len(motion_primitives)):
+		motion_primitive = motion_primitives[i]
+		motion_primitive.append([0,0])
+		string+="\n\t(ite (= move "+str(i)+") "
+		for j in range(len(obstacle_motion_primitives)):
+			string+="\n\t\t(ite (= obstacleMove "+str(j)+") "
+			obstacle_motion_primitive = obstacle_motion_primitives[j]
+			obstacle_motion_primitive.append([0,0])
+			stepCombinations = [];
+			for k in range(len(motion_primitive)):
+				step = motion_primitive[k]
+				for l in range(len(obstacle_motion_primitive)):
+					ostep = obstacle_motion_primitive[l]
+					stepCombinations.append("(!= (+ (+ currPoint "+str(step[0])+") "+ str(step[1]*dimensions[0])+") (+ (+ obstacleCurrPoint "+str(ostep[0])+") "+ str(ostep[1]*dimensions[0])+"))")
+			string+=andItems(stepCombinations)
+		string+=" false"+(")"*len(obstacle_motion_primitives)) #wasn't any of the moves we recognize, so should fail
+	string+=" false"+(")"*len(motion_primitives)) #wasn't any of the moves we recognize, so should fail
+	return string
+
 def generateInterpretMove(fun_name, motion_primitives):
 	string = "(define-fun "+fun_name+" (( currPoint Int ) ( move Int)) Int"
 	return string+generateInterpretMoveHelper(motion_primitives,0)+")\n\n"
@@ -72,10 +100,19 @@ def consolidateMotionPrimitives(motion_primitives):
 #print [[1, 0], [0, 1], [1, 1]] in consolidateMotionPrimitives([[[0,0]],[[0,1],[1,1]],[[1,0],[1,1]],[[0,-1]],[[-1,0]]])
 
 def generateAllowableMoves(funName, interpretFunName, numMoves):
-	string = "(define-fun "+funName+" (( start Int ) ( end Int)) Int"
+	string = "(define-fun "+funName+" (( start Int ) ( end Int)) Bool"
 	for i in range(numMoves):
 		string+="\n\t(or (= ("+interpretFunName+" start "+str(i)+") end)"
 	string+=" false"
+	for i in range(numMoves):
+		string+=")"
+	return string+")\n\n"
+
+def generateGetObstacleMove(funName, interpretFunName, numMoves):
+	string = "(define-fun "+funName+" (( start Int ) ( end Int)) Int"
+	for i in range(numMoves):
+		string+="\n\t(ite (= ("+interpretFunName+" start "+str(i)+") end) "+str(i)+" "
+	string+=" -1"
 	for i in range(numMoves):
 		string+=")"
 	return string+")\n\n"
@@ -113,7 +150,15 @@ def generateConstraints(allowedSteps):
 	for i in range(len(obstacles_initial)):
 		obstacleAllowableMoves += generateAllowableMoves("allowable-move-obstacle-"+str(i),"interpret-move-obstacle-"+(str(i)),len(obstacles_motion_primitives_list[i]))
 
-	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+"\n\n"
+	obstacleGetMove = ""
+	for i in range(len(obstacles_initial)):
+		obstacleGetMove += generateGetObstacleMove("get-move-obstacle-"+str(i),"interpret-move-obstacle-"+(str(i)),len(obstacles_motion_primitives_list[i]))
+
+	obstacleNoOverlaps = ""
+	for i in range(len(obstacles_initial)):
+		obstacleNoOverlaps+= generateNoOveralap("no-overlaps-"+str(i), motion_primitives, obstacles_motion_primitives_list[i])
+
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+obstacleNoOverlaps+"\n\n"
 
 	obstaclePositions = ""
 	for i in range(len(obstacles_initial)):
@@ -175,15 +220,12 @@ def generateConstraints(allowedSteps):
 
 	correctProgConstraint = "(= "+currProg+" "+str(coordsToPoint(target[0],target[1]))+")"
 
-	allowableObstacleMovesConstraint = ""
 	allowableObstacleMoves = []
 	for i in range(len(obstacles)):
 		obstaclePlaces = obstacles[i]
 		for j in range(len(obstaclePlaces)-1):
 			allowableObstacleMoves.append("(allowable-move-obstacle-"+str(i)+" "+obstaclePlaces[j]+" "+obstaclePlaces[j+1]+")")
-	for i in range(len(allowableObstacleMoves)):
-		allowableObstacleMovesConstraint+="(and "+allowableObstacleMoves[i]+" "
-	allowableObstacleMovesConstraint+="true"+(")"*len(allowableObstacleMoves))
+	allowableObstacleMovesConstraint = andItems(allowableObstacleMoves)
 
 	f.write("(or "+correctProgConstraint+" "+allowableObstacleMovesConstraint+")")
 	
