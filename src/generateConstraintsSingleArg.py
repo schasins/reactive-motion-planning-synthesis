@@ -206,7 +206,7 @@ def generateConstraints(allowedSteps):
 
 	moveCombinations = ("\n\n").join(combinationFunctions.values()) #combinationFunctions have been generated over the course of making the no overlaps code
 
-	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+moveCombinations+obstacleNoOverlaps+obstaclesNoOverlapsOneStep+"\n\n"
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+moveCombinations+obstacleNoOverlaps+"\n\n"
 
 	obstaclePositions = ""
 	for i in range(len(obstacles_initial)):
@@ -255,7 +255,7 @@ def generateConstraints(allowedSteps):
 (define-fun move-wrapper ((currPoint Int)"""+obstacleParams+""") Int	
 	(interpret-move currPoint (move currPoint """+obstacleArgs+""")))\n\n"""
 
-	f.write(synthWrapper);
+	f.write(synthWrapper+obstaclesNoOverlapsOneStep);
 
 	def getLocationInSteps(steps,obstacles):
 		currProg = str(coordsToPoint(initial[0],initial[1]))
