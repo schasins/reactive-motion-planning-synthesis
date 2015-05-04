@@ -133,7 +133,16 @@ def generateConstraints(allowedSteps):
 
 	getXCoordHelperFunction ="""
 (define-fun get-x ((currPoint Int)) Int
-	(- currPoint (* (get-y currPoint) """+width+""")))\n\n"""
+	(- currPoint (* (get-y currPoint) """+width+""")))\n"""
+
+	obstacleParams = ""
+	obstacleArgs = ""
+	for i in range(len(obstacles_initial)):
+		obstacleParams+=" (o"+str(i)+" Int)"
+		obstacleArgs+=" o"+str(i)
+	synthWrapper = """
+(define-fun move-wrapper ((currPoint Int)"""+obstacleParams+""") Int	
+	(interpret-move currPoint (move currPoint """+obstacleArgs+""")))\n\n"""
 
 	robotMoves = generateInterpretMove("interpret-move", motion_primitives)
 	#first preprocess the moves so that all intermediate stages that lead to the same final position are consolidated
@@ -158,7 +167,7 @@ def generateConstraints(allowedSteps):
 	for i in range(len(obstacles_initial)):
 		obstacleNoOverlaps+= generateNoOveralap("no-overlaps-"+str(i), motion_primitives, obstacles_motion_primitives_list[i])
 
-	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+obstacleNoOverlaps+"\n\n"
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+synthWrapper+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+obstacleNoOverlaps+"\n\n"
 
 	obstaclePositions = ""
 	for i in range(len(obstacles_initial)):
@@ -170,18 +179,14 @@ def generateConstraints(allowedSteps):
 		(ite (<= (get-y currPoint) 2) (interpret-move currPoint 4) (ite (<= (get-x currPoint) 2) (interpret-move currPoint 2) (interpret-move currPoint 0))))
 	"""
 
-	obstacleArgs = ""
-	for i in range(len(obstacles_initial)):
-		obstacleArgs+=" (o"+str(i)+" Int)"
-
 	obstacleUses = ""
 	for i in range(len(obstacles_initial)):
 		obstacleUses+="\n\t\t(get-y o"+str(i)+")\n\t\t(get-x o"+str(i)+")"
 
 	grammar = """
-(synth-fun move ((currPoint Int)"""+obstacleArgs+""") Int
+(synth-fun move ((currPoint Int)"""+obstacleParams+""") Int
 	((Start Int (
-		(interpret-move currPoint MoveId)
+		MoveId
 		(ite StartBool Start Start)))
     (MoveId Int ("""+("\n\t\t").join(map(str,range(len(motion_primitives))))+"""
   	))
@@ -216,7 +221,7 @@ def generateConstraints(allowedSteps):
 
 	currProg = str(coordsToPoint(initial[0],initial[1]))
 	for i in range(allowedSteps):
-		currProg = "(move "+currProg+" "+(" ").join(map(lambda x: x[i], obstacles))+")"
+		currProg = "(move-wrapper "+currProg+" "+(" ").join(map(lambda x: x[i], obstacles))+")"
 
 	correctProgConstraint = "(= "+currProg+" "+str(coordsToPoint(target[0],target[1]))+")"
 
