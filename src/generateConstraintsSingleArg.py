@@ -67,13 +67,10 @@ def generateNoOverlapsOneStep(numObstacles):
 	string+=andItems(noOverlaps)+")\n\n"
 
 	#outer func
-	string+="(define-fun no-overlaps-one-step ((currPoint Int) "
+	string+="(define-fun no-overlaps-one-step ((currPoint Int) (move Int) "
 	for i in range(numObstacles):
 		string+=" (o"+str(i)+"-0 Int) (o"+str(i)+"-1 Int)"
-	string+=") Bool\n\t(no-overlaps-one-step-helper currPoint (move currPoint"
-	for i in range(numObstacles):
-		string+=" o"+str(i)+"-0"
-	string+=")"
+	string+=") Bool\n\t(no-overlaps-one-step-helper currPoint move"
 	for i in range(numObstacles):
 		string+=" o"+str(i)+"-0 (get-move-obstacle-"+str(i)+" o"+str(i)+"-0 o"+str(i)+"-1)"
 	string+="))\n\n"
@@ -206,7 +203,7 @@ def generateConstraints(allowedSteps):
 
 	moveCombinations = ("\n\n").join(combinationFunctions.values()) #combinationFunctions have been generated over the course of making the no overlaps code
 
-	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+moveCombinations+obstacleNoOverlaps+"\n\n"
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+moveCombinations+obstacleNoOverlaps+obstaclesNoOverlapsOneStep+"\n\n"
 
 	obstaclePositions = ""
 	for i in range(len(obstacles_initial)):
@@ -251,23 +248,30 @@ def generateConstraints(allowedSteps):
 	f.write(grammar)
 	#f.write(grammar2)
 
-	synthWrapper = """
-(define-fun move-wrapper ((currPoint Int)"""+obstacleParams+""") Int	
-	(interpret-move currPoint (move currPoint """+obstacleArgs+""")))\n\n"""
-
-	f.write(synthWrapper+obstaclesNoOverlapsOneStep);
-
 	def getLocationInSteps(steps,obstacles):
-		currProg = str(coordsToPoint(initial[0],initial[1]))
-		for i in range(steps):
-			currProg = "(move-wrapper "+currProg+" "+(" ").join(map(lambda x: x[i], obstacles))+")"
-		return currProg
+		if (steps == 0):
+			return str(coordsToPoint(initial[0],initial[1]))
+		else:
+			locationAtStepsMinusOne = getLocationInSteps(steps-1,obstacles)
+			return "(interpret-move "+locationAtStepsMinusOne+" (move "+ locationAtStepsMinusOne+" "+(" ").join(map(lambda x: x[steps-1], obstacles))+"))"
+
+	def getIthMove(steps,obstacles):
+		return "(move "+getLocationInSteps(steps, obstacles)+" "+(" ").join(map(lambda x: x[steps], obstacles))+")"
 	
 	obstacles = []
 	for i in range(len(obstacles_initial)):
 		obstacles.append([str(coordsToPoint(obstacles_initial[i][0],obstacles_initial[i][1]))])
 		for j in range(allowedSteps):
 			obstacles[i].append("o"+str(i)+"-"+str(j+1))
+	"""
+	print getLocationInSteps(0,obstacles)
+	print getLocationInSteps(1,obstacles)
+	print getLocationInSteps(2,obstacles)
+	print "---"
+	print getIthMove(0,obstacles)
+	print getIthMove(1,obstacles)
+	print getIthMove(2,obstacles)
+	"""
 
 	finalLoc = getLocationInSteps(allowedSteps,obstacles)
 	correctProgConstraint = "(= "+finalLoc+" "+str(coordsToPoint(target[0],target[1]))+")"
@@ -281,7 +285,7 @@ def generateConstraints(allowedSteps):
 
 	noOverlapItems = []
 	for i in range(allowedSteps):
-		string = "(no-overlaps-one-step "+getLocationInSteps(i,obstacles)
+		string = "(no-overlaps-one-step "+getLocationInSteps(i,obstacles)+" "+getIthMove(i,obstacles)
 		for j in range(len(obstacles)):
 			string+=" "+obstacles[j][i]+" "+obstacles[j][i+1]
 		string+=")"
