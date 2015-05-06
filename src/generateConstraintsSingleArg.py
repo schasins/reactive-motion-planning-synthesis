@@ -1,12 +1,12 @@
 dimensions = (5,6)
 
-initial = (0,0)
-target = (3,3)
+initial = (1,1)
+target = (4,4)
 motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
 
-obstacles_initial = [(1,5),(2,5)]
+obstacles_initial = [(2,5),(3,5)]
 obstacles_motion_primitives_list = [
-	[[[0,0]],[[0,1]],[[0,-1]]], #first obstacle
+	[[[0,1]],[[0,-1]]], #first obstacle
 	[[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
 ]
 
