@@ -255,23 +255,24 @@ def generateConstraints(allowedSteps):
 			obstacles[i].append("o"+str(i)+"-"+str(j+1))
 
 	lets = ""
-	for i in range(allowedSteps):
+	for i in range(allowedSteps+1):
 		lets +=" (let (("
 		lets+="pos"+str(i)+" Int "
 		if i == 0:
 			lets+= str(coordsToPoint(initial[0],initial[1]))
 		else:
 			lets+= "(interpret-move pos"+str(i-1)+" mov"+str(i-1)+")"
-		lets += ")) (let (("
-		lets+="mov"+str(i)+" Int (move pos"+str(i)
-		for j in range(len(obstacles)):
-			lets+= " "+obstacles[j][i]
-		lets+=")))"
+		lets += "))"
+		if i < allowedSteps:
+			#only calculate the move if we have to
+			lets+="(let (("
+			lets+="mov"+str(i)+" Int (move pos"+str(i)
+			for j in range(len(obstacles)):
+				lets+= " "+obstacles[j][i]
+			lets+=")))"
 	lets+="\n"
 
-	letsEnd = ""
-	for i in range(allowedSteps):
-		letsEnd+="))"
+	letsEnd = ")"*(2*allowedSteps+1)
 
 	correctProgConstraint = "(= pos"+str(allowedSteps)+" "+str(coordsToPoint(target[0],target[1]))+")"
 
