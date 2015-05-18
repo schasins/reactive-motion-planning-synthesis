@@ -10,6 +10,8 @@ obstacles_motion_primitives_list = [
 	[[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
 ]
 
+maxSteps = 1
+
 def coordsToPoint(x,y):
 	return y*dimensions[0]+x
 
@@ -265,7 +267,7 @@ def generateConstraints(allowedSteps):
 		lets += "))"
 		if i < allowedSteps:
 			#only calculate the move if we have to
-			lets+="(let (("
+			lets+=" (let (("
 			lets+="mov"+str(i)+" Int (move pos"+str(i)
 			for j in range(len(obstacles)):
 				lets+= " "+obstacles[j][i]
@@ -296,7 +298,7 @@ def generateConstraints(allowedSteps):
 	
 	#f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
 
-	f.write("\n(check-synth)")
+	f.write("\n\n(check-synth)")
 	f.close()
 
-generateConstraints(6)
+generateConstraints(maxSteps)

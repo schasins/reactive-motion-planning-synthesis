@@ -1,14 +1,49 @@
+import sys
+
 dimensions = (5,6)
 
 initial = (1,1)
-target = (4,4)
+target = (2,2)
 motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
 
-obstacles_initial = [(2,5),(3,5)]
+obstacles_initial = [(0,5),(1,5)]
 obstacles_motion_primitives_list = [
-	[[[0,1]],[[0,-1]]], #first obstacle
-	[[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
+        [[[0,1]],[[0,-1]]], #first obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
 ]
+
+#code from testing
+"""
+dimensions = (13,6)
+
+initial = (0,0)
+target = (0,6)
+motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
+
+obstacles_initial = [(11,5),(12,5),(11,4),(12,4),(11,3),(12,3),(11,2),(12,2),(11,1),(12,1)]
+obstacles_motion_primitives_list = [
+        [[[0,0]],[[0,1]],[[0,-1]]], #first obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]],  #second obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]],
+        [[[0,0]],[[0,1]],[[0,-1]]],
+        [[[0,0]],[[0,1]],[[0,-1]]],
+        [[[0,0]],[[0,1]],[[0,-1]]],
+        [[[0,0]],[[0,1]],[[0,-1]]],
+        [[[0,0]],[[0,1]],[[0,-1]]],
+        [[[0,0]],[[0,1]],[[0,-1]]],
+        [[[0,0]],[[0,1]],[[0,-1]]]
+]
+"""
+
+stepLimit = 3
+
+if (len(sys.argv) > 1):
+        stepLimit = int(sys.argv[1])
+        target = [int(sys.argv[2]),int(sys.argv[3])]
+        num_obstacles = int(sys.argv[4])
+        obstacles_initial = obstacles_initial[0:num_obstacles]
+        obstacles_motion_primitives_list = obstacles_motion_primitives_list[0:num_obstacles]
+        print len(obstacles_initial)
 
 def coordsToPoint(x,y):
 	return y*dimensions[0]+x
@@ -299,4 +334,5 @@ def generateConstraints(allowedSteps):
 	f.write("\n(check-synth)")
 	f.close()
 
-generateConstraints(6)
+
+generateConstraints(stepLimit)
