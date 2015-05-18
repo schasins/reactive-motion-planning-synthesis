@@ -257,13 +257,13 @@ def generateConstraints(allowedSteps):
 	lets = ""
 	for i in range(allowedSteps):
 		lets +=" (let (("
-		lets+="pos"+str(i)+" "
+		lets+="pos"+str(i)+" Int "
 		if i == 0:
 			lets+= str(coordsToPoint(initial[0],initial[1]))
 		else:
 			lets+= "(interpret-move pos"+str(i-1)+" mov"+str(i-1)+")"
 		lets += ")) (let (("
-		lets+="mov"+str(i)+" (move pos"+str(i)
+		lets+="mov"+str(i)+" Int (move pos"+str(i)
 		for j in range(len(obstacles)):
 			lets+= " "+obstacles[j][i]
 		lets+=")))"
