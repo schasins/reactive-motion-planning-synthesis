@@ -1,0 +1,77 @@
+#Depth1Steps3
+ 
+dimensions = (10,10)
+initial = (0,0)
+target = (0,3)
+motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
+obstacles_initial = [(9,9),(8,9)]
+obstacles_motion_primitives_list = [
+        [[[0,1]],[[0,-1]]], #first obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
+]
+maxSteps = 3
+ 
+#Depth1Steps7
+ 
+dimensions = (10,10)
+initial = (0,0)
+target = (0,7)
+motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
+obstacles_initial = [(9,9),(8,9)]
+obstacles_motion_primitives_list = [
+        [[[0,1]],[[0,-1]]], #first obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
+]
+maxSteps = 7
+ 
+#Depth4Steps3
+ 
+dimensions = (10,10)
+initial = (0,0)
+target = (1,2)
+motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
+obstacles_initial = [(9,9),(8,9)]
+obstacles_motion_primitives_list = [
+        [[[0,1]],[[0,-1]]], #first obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
+]
+maxSteps = 3
+
+#Depth4Steps7
+ 
+dimensions = (10,10)
+initial = (0,0)
+target = (1,6)
+motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
+obstacles_initial = [(9,9),(8,9)]
+obstacles_motion_primitives_list = [
+        [[[0,1]],[[0,-1]]], #first obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
+]
+maxSteps = 7
+  
+#Depth5Steps3
+ 
+dimensions = (10,10)
+initial = (0,0)
+target = (1,1)
+motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
+obstacles_initial = [(9,9),(8,9)]
+obstacles_motion_primitives_list = [
+        [[[0,1]],[[0,-1]]], #first obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
+]
+maxSteps = 3
+
+#Depth5Steps7
+ 
+dimensions = (10,10)
+initial = (0,0)
+target = (1,5)
+motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
+obstacles_initial = [(9,9),(8,9)]
+obstacles_motion_primitives_list = [
+        [[[0,1]],[[0,-1]]], #first obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
+]
+maxSteps = 7
