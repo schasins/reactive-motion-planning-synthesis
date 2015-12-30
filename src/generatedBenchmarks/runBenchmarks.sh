@@ -1,18 +1,19 @@
 #!/bin/bash
 
+function join { local IFS="$1"; shift; echo "$*"; }
+
 ITERATIONS=5
 
 for entry in `ls`; do
 	ARRAY=()
 
 	for ((i=0; i<$ITERATIONS;i++)); do
-	    for((j=0; j<2; j++)); do
 	        PRETIME=$(date +%s%N)
-	        ~/research/sygus-comp14/solvers/enumerative/esolver-synth-lib/bin/opt/esolver-synthlib $entry
+	        eval ~/research/sygus-comp14/solvers/enumerative/esolver-synth-lib/bin/opt/esolver-synthlib "$entry" > solutions/"$entry"
 	        POSTTIME=$(date +%s%N)
-	        $(ARRAY)+= $POSTTIME-$PRETIME
-	    done
+	        ARRAY+=(`expr $POSTTIME - $PRETIME`)
 	done
-
-	echo $entry $ARRAY
+	
+	JOINED=`join , "${ARRAY[@]}"`
+	echo $entry,$JOINED
 done

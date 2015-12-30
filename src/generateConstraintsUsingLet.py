@@ -360,12 +360,12 @@ def genBenchmarks():
 	obstacles_motion_primitives_list = []
 	maxSteps = 5
 	for i in range(len(obstacles_initial)):
-		obstacles_motion_primitives_list.append([[[0,1]],[[0,-1]]])
+		obstacles_motion_primitives_list.append([[[0,0]]])
 	for i in range(len(initials)):
 		initial = initials[i]
 		target = targets[i]
 		depth = str(depths[i])
-		generateConstraints("generatedBenchmarks/depth_"+depth+"_6-5-4-"+depth+".sl", dimensions, initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
+		generateConstraints("generatedBenchmarks/zdepth_"+depth+"_6-5-4-"+depth+".sl", dimensions, initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
 
 
 generateBenchmarks = True
