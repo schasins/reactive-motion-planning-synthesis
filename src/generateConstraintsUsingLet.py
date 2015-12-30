@@ -1,16 +1,13 @@
-dimensions = (5,6)
-
-initial = (1,1)
-target = (4,4)
+dimensions = (10,10)
+initial = (0,0)
+target = (1,5)
 motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
-
-obstacles_initial = [(2,5),(3,5)]
+obstacles_initial = [(9,9),(8,9)]
 obstacles_motion_primitives_list = [
-	[[[0,1]],[[0,-1]]], #first obstacle
-	[[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
+        [[[0,1]],[[0,-1]]], #first obstacle
+        [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
 ]
-
-maxSteps = 1
+maxSteps = 7
 
 def coordsToPoint(x,y):
 	return y*dimensions[0]+x
@@ -302,7 +299,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 		noOverlapItems.append(string)
 	noOverlapsConstraint = andItems(noOverlapItems)
 
-	f.write("(constraint "+lets+"(or \n\t(and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")\n\t(not "+allowableObstacleMovesConstraint+"))"+letsEnd+")")
+	f.write("(constraint "+lets+" (or \n\t(and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")\n\t(not "+allowableObstacleMovesConstraint+"))"+letsEnd+")")
 	
 	#f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
 

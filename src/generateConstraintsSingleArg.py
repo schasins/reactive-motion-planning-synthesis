@@ -1,16 +1,15 @@
 import sys
 
-dimensions = (5,6)
-
-initial = (1,1)
-target = (2,2)
+dimensions = (10,10)
+initial = (0,0)
+target = (1,1)
 motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
-
-obstacles_initial = [(0,5),(1,5)]
+obstacles_initial = [(9,9),(8,9)]
 obstacles_motion_primitives_list = [
         [[[0,1]],[[0,-1]]], #first obstacle
         [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
 ]
+maxSteps = 3
 
 #code from testing
 """
@@ -35,7 +34,7 @@ obstacles_motion_primitives_list = [
 ]
 """
 
-stepLimit = 3
+#stepLimit = 3
 
 if (len(sys.argv) > 1):
         stepLimit = int(sys.argv[1])
@@ -335,4 +334,4 @@ def generateConstraints(allowedSteps):
 	f.close()
 
 
-generateConstraints(stepLimit)
+generateConstraints(maxSteps)
