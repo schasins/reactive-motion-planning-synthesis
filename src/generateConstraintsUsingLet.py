@@ -365,7 +365,7 @@ def genBenchmarks():
 		initial = initials[i]
 		target = targets[i]
 		depth = str(depths[i])
-		generateConstraints("generatedBenchmarks/depth"+depth+"_6-5-4-"+depth+".sl", dimensions, initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
+		generateConstraints("generatedBenchmarks/depth_"+depth+"_6-5-4-"+depth+".sl", dimensions, initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
 
 
 generateBenchmarks = True
