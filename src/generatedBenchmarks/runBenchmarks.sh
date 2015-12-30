@@ -1,6 +1,21 @@
 for entry in `ls .`; do
-	echo $entry
-    for i in {1..5}; do
-    ~/research/sygus-comp14/solvers/enumerative/esolver-synth-lib/bin/opt/esolver-synthlib -s 15 $entry
-    done
+
+	ARRAY=()
+	ITERATIONS=5
+
+	for ((i=0; i<$ITERATIONS; i++)); do
+	    ARRAY+=(())
+	done
+
+	for ((i=0; i<$ITERATIONS;i++)); do
+	    for((j=0; j<2; j++)); do
+	        $PRETIME = date +%s%N
+	        ~/research/sygus-comp14/solvers/enumerative/esolver-synth-lib/bin/opt/esolver-synthlib $entry
+	        $POSTTIME = date +%s%N
+	        $(ARRAY[$(j)])+=($POSTTIME-$PRETIME)
+	    done
+	done
+
+	echo $entry $ARRAY
+	
 done
