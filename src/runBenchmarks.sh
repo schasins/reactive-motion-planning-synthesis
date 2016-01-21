@@ -9,7 +9,7 @@ for entry in `ls generatedBenchmarks`; do
 
 	for ((i=0; i<$ITERATIONS;i++)); do
 	        PRETIME=$(date +%s%N)
-	        eval ~/research/sygus-comp14/solvers/enumerative/esolver-synth-lib/bin/opt/esolver-synthlib generatedBenchmarks/"$entry" > solutions/"$entry"
+	        eval ~/research/sygus-comp14/solvers/enumerative/esolver-synth-lib/bin/opt/esolver-synthlib -s 25  generatedBenchmarks/"$entry" > solutions/"$entry"
 	        POSTTIME=$(date +%s%N)
 	        ARRAY+=(`expr $POSTTIME - $PRETIME`)
 	done

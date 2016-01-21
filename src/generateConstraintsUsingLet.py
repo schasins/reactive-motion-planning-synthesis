@@ -311,21 +311,21 @@ def genBenchmarks():
 
 	# Dimensions benchmarks
 	initial = (1,0)
-	target = (6,5)
-	maxSteps = 10
+	target = (4,2)
+	maxSteps = 5
 	obstacles_initial = []
 	obstacles_motion_primitives_list = []
-	for i in range(10):
+	for i in range(5):
 		obstacles_initial.append([0,i])
 		obstacles_motion_primitives_list.append([[[0,1]],[[0,-1]]])
-	for i in range(10, 110, 10):
-		generateConstraints("generatedBenchmarks/dimensions_"+str(i)+"-"+str(i)+"_10-10-4.sl", [i,i], initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
+	for i in range(5, 55, 5):
+		generateConstraints("generatedBenchmarks/dimensions_"+str(i)+"_"+str(i)+"-5-5-4.sl", [i,i], initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
 
 	# Num obstacles benchmarks
 	dimensions = [30,30]
 	initial = (0,0)
-	target = (5,5)
-	maxSteps = 10
+	target = (2,3)
+	maxSteps = 5
 	obstacles_initial = []
 	obstacles_motion_primitives_list = []
 	for i in range(50):
@@ -334,14 +334,14 @@ def genBenchmarks():
 	for i in range(5, 55, 5):
 		oi = obstacles_initial[:i]
 		ompl = obstacles_motion_primitives_list[:i]
-		generateConstraints("generatedBenchmarks/numobstacles_"+str(i)+"_30-10-"+str(i)+"-4.sl", dimensions, initial, target, maxSteps, motion_primitives, oi, ompl)
+		generateConstraints("generatedBenchmarks/numobstacles_"+str(i)+"_30-5-"+str(i)+"-4.sl", dimensions, initial, target, maxSteps, motion_primitives, oi, ompl)
 
 	# Num steps benchmarks
 	dimensions = [30,30]
 	initial = (1,1)
 	obstacles_initial = []
 	obstacles_motion_primitives_list = []
-	for i in range(10):
+	for i in range(5):
 		obstacles_initial.append([0, i])
 		obstacles_motion_primitives_list.append([[[0,1]],[[0,-1]]])
 	for i in range(5, 55, 5):
@@ -349,7 +349,7 @@ def genBenchmarks():
 		xDir = maxSteps/2
 		yDir = maxSteps - xDir
 		target = [1+xDir,1+yDir]
-		generateConstraints("generatedBenchmarks/numsteps_"+str(i)+"_30-"+str(i)+"-10-4.sl", dimensions, initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
+		generateConstraints("generatedBenchmarks/numsteps_"+str(i)+"_30-"+str(i)+"-5-4.sl", dimensions, initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
 
 	# Depth benchmarks
 	dimensions = [6,6]
