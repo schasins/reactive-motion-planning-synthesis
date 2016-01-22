@@ -13,16 +13,17 @@ def coordsToPoint(x,y):
 	return y*dimensions[0]+x
 
 def update(coords, relativePosition, xLimit, yLimit):
-	newCoords = [coords[0]+relativePosition[0], coords[1]+relativePosition[1]]
-	if newCoords[0] < 0:
-		newCoords[0] = 0
-	elif newCoords[0] > (xLimit - 1):
-		newCoords[0] = xLimit - 1
-	if newCoords[1] < 0:
-		newCoords[1] = 0
-	elif newCoords[1] > (yLimit - 1):
-		newCoords[1] = yLimit - 1
-	return newCoords
+	x = coords[0]+relativePosition[0]
+	y = coords[1]+relativePosition[1]
+	if x < 0:
+		x = 0
+	elif x > (xLimit - 1):
+		x = xLimit - 1
+	if y < 0:
+		y = 0
+	elif y > (yLimit - 1):
+		y = yLimit - 1
+	return (x,y)
 
 def andItems(ls):
 	andstring = ""
@@ -176,7 +177,7 @@ def findPossibleObstaclePositionsAtEachStep(obstacles_initial, obstacles_motion_
 
 	currPositions = []
 	for i in range(len(obstacles_initial)):
-		currPositions.append([obstacles_initial[i]]) # form will be [[obstacle 0 pos 0],[obstacle 1 pos 0], ...], xy form
+		currPositions.append([(obstacles_initial[i][0], obstacles_initial[i][1])]) # form will be [[obstacle 0 pos 0],[obstacle 1 pos 0], ...], xy form
 
 	for i in range(allowedSteps):
 		thisStepPositions = set() # form will be [possible pos 0, possible pos 1, ...], combined form
@@ -184,21 +185,21 @@ def findPossibleObstaclePositionsAtEachStep(obstacles_initial, obstacles_motion_
 		for j in range(len(currPositions)):
 			oneObstaclePositions = currPositions[j]
 			oneObstacleMotionPrimatives = obstacles_motion_primitives_list[j]
-			oneObstacleNewCurrPositions = []
+			oneObstacleNewCurrPositions = set()
 			for k in range(len(oneObstaclePositions)):
 				oneObstaclePosition = oneObstaclePositions[k]
 				for l in range(len(oneObstacleMotionPrimatives)):
 					onePrimitive = oneObstacleMotionPrimatives[l]
 					finalPos = onePrimitive[-1]
 					finalPositionForThisStartingPositionAndThisPrimitive = update(oneObstaclePosition, finalPos, dimensions[0], dimensions[1])
-					oneObstacleNewCurrPositions.append(finalPositionForThisStartingPositionAndThisPrimitive)
+					oneObstacleNewCurrPositions.add(finalPositionForThisStartingPositionAndThisPrimitive)
 					# and this primitive will have a number of possible places through which the obstacle may travel
 					for m in range(len(onePrimitive)):
 						oneIntermediatePosition = onePrimitive[m]
 						newCoords = update(oneObstaclePosition, oneIntermediatePosition, dimensions[0], dimensions[1])
 						possiblePosition = coordsToPoint(newCoords[0], newCoords[1])
 						thisStepPositions.add(possiblePosition)
-			newCurrPositions.append(oneObstacleNewCurrPositions)
+			newCurrPositions.append(list(oneObstacleNewCurrPositions))
 
 		output.append(thisStepPositions)
 		currPositions = newCurrPositions
