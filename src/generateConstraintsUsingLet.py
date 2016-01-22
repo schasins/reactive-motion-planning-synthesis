@@ -26,11 +26,32 @@ def update(coords, relativePosition, xLimit, yLimit):
 	return (x,y)
 
 def andItems(ls):
+	if (len(ls) == 0):
+		print "tried to and something empty.  don't know what to do."
+		exit(1)
 	andstring = ""
+	lsLastIndex = len(ls) - 1
 	for i in range(len(ls)):
-		andstring+="(and "+ls[i]+" "
-	andstring+="true"+(")"*len(ls))
+		if i == lsLastIndex:
+			andstring += ls[i]
+		else:
+			andstring+="(and "+ls[i]+" "
+	andstring+=(")"*lsLastIndex)
 	return andstring
+
+def orItems(ls):
+	if (len(ls) == 0):
+		print "tried to or something empty.  don't know what to do."
+		exit(1)
+	orstring = ""
+	lsLastIndex = len(ls) - 1
+	for i in range(len(ls)):
+		if i == lsLastIndex:
+			orstring += ls[i]
+		else:
+			orstring+="(or "+ls[i]+" "
+	orstring+=(")"*lsLastIndex)
+	return orstring
 
 def generateCombinationFunction(funcName, l1, l2):
 	string = "(define-fun "+funcName+" ("+" ".join(map((lambda x: "(p"+str(x)+" Int)"),range(l1+l2)))+") Bool"
@@ -86,6 +107,39 @@ def generateNoOverlapsOneStep(numObstacles):
 	for i in range(numObstacles):
 		string+=" o"+str(i)+"-0 (get-move-obstacle-"+str(i)+" o"+str(i)+"-0 o"+str(i)+"-1)"
 	string+="))\n\n"
+	return string
+
+def generateIsOverlapPerStep(fun_name, possible_obstacle_positions):
+	# this function will test whether an input position is any of the possible_obstacle_positions
+	string = "(define-fun "+fun_name+" (( robotPoint Int )) Bool\n\t"
+	stringsToOr = []
+	for position in possible_obstacle_positions:
+		stringsToOr.append("(= robotPoint "+str(position)+")")
+	orList = orItems(stringsToOr)
+	string+=orList+")\n\n"
+	return string
+
+def generateNoOveralap(fun_name, motion_primitives, current_step):
+	string = "(define-fun "+fun_name+" (( currPoint Int ) ( robotMove Int)) Bool"
+	for i in range(len(motion_primitives)):
+		motion_primitive = motion_primitives[i]
+		string+="\n\t(ite (= move "+str(i)+") "
+		# now we have to find all the possible intermediate positions for this motion primitive, make sure none of them are the positions in which obstacles could be present at this step
+
+		positionStrings = ["currPoint"]
+		for k in range(len(motion_primitive)):
+			step = motion_primitive[k]
+			positionStrings.append("(+ (+ currPoint "+str(step[0])+") "+ str(step[1]*dimensions[0])+")")
+
+		checkPositionStrings = []
+		for positionString in positionStrings:
+				checkPositionStrings.append("(not (is-possible-robot-position-during-step-"+str(current_step)+" "+positionString+"))")
+
+		andedConstraints = andItems(checkPositionStrings)
+		string+=andedConstraints
+	string+="\n\tfalse"
+	string+=(")"*len(motion_primitives))
+	string+=")\n\n"
 	return string
 
 def generateInterpretMove(fun_name, motion_primitives):
@@ -204,10 +258,6 @@ def findPossibleObstaclePositionsAtEachStep(obstacles_initial, obstacles_motion_
 		output.append(thisStepPositions)
 		currPositions = newCurrPositions
 
-	for i in range(len(output)):
-		print i, output[i]
-	print "*********"
-
 	return output
 
 def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
@@ -234,7 +284,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 
 	getXCoordHelperFunction ="""
 (define-fun get-x ((currPoint Int)) Int
-	(- currPoint (* (get-y currPoint) """+width+""")))\n"""
+	(- currPoint (* (get-y currPoint) """+width+""")))\n\n"""
 
 	obstacleParams = ""
 	obstacleArgs = ""
@@ -249,7 +299,15 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	#that matches the move, we don't have to look for others, don't have to handle two or more
 
 	obstaclePositionsAtEachStep = findPossibleObstaclePositionsAtEachStep(obstacles_initial, obstacles_motion_primitives_list, allowedSteps, dimensions)
-	#print obstaclePositionsAtEachStep
+	perStepOneRobotPositionCheckers = ""
+	for i in range(len(obstaclePositionsAtEachStep)):
+		oneStepOneRobotPositionChecker = generateIsOverlapPerStep("is-possible-robot-position-during-step-"+str(i), obstaclePositionsAtEachStep[i])
+		perStepOneRobotPositionCheckers += oneStepOneRobotPositionChecker
+
+	perStepAllRobotPositionCheckers = ""
+	for i in range(allowedSteps):
+		oneStepAllRobotPositionChecker = generateNoOveralap("safe-move-during-step-"+str(i), motion_primitives, i)
+		perStepAllRobotPositionCheckers += oneStepAllRobotPositionChecker
 
 	obstacleMoves = ""
 	for i in range(len(obstacles_motion_primitives_list)):
@@ -273,7 +331,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 
 	moveCombinations = ("\n\n").join(combinationFunctions.values()) #combinationFunctions have been generated over the course of making the no overlaps code
 
-	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+moveCombinations+obstacleNoOverlaps+obstaclesNoOverlapsOneStep+"\n\n"
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+perStepOneRobotPositionCheckers+perStepAllRobotPositionCheckers+"\n\n"
 
 	obstaclePositions = ""
 	for i in range(len(obstacles_initial)):
@@ -396,7 +454,6 @@ def genBenchmarks():
 			obstacles_initial.append([i, 19])
 			obstacles_motion_primitives_list.append([[[0,1]],[[0,-1]]])
 		for i in range(5, 55, 5):
-			print "************ ", i
 			oi = obstacles_initial[:i]
 			ompl = obstacles_motion_primitives_list[:i]
 			generateConstraints("generatedBenchmarks/numobstacles_"+str(i)+"_30-5-"+str(i)+"-4.sl", dimensions, initial, target, maxSteps, motion_primitives, oi, ompl)
