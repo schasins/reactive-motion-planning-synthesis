@@ -12,6 +12,18 @@ maxSteps = 7
 def coordsToPoint(x,y):
 	return y*dimensions[0]+x
 
+def update(coords, relativePosition, xLimit, yLimit):
+	newCoords = [coords[0]+relativePosition[0], coords[1]+relativePosition[1]]
+	if newCoords[0] < 0:
+		newCoords[0] = 0
+	elif newCoords[0] > (xLimit - 1):
+		newCoords[0] = xLimit - 1
+	if newCoords[1] < 0:
+		newCoords[1] = 0
+	elif newCoords[1] > (yLimit - 1):
+		newCoords[1] = yLimit - 1
+	return newCoords
+
 def andItems(ls):
 	andstring = ""
 	for i in range(len(ls)):
@@ -151,6 +163,52 @@ def generateGetObstacleMove(funName, interpretFunName, numMoves):
 		string+=")"
 	return string+")\n\n"
 
+def findPossibleObstaclePositionsAtEachStep(obstacles_initial, obstacles_motion_primitives_list, allowedSteps, dimensions):
+	# produces list of lists of possible positions
+	output = []
+
+	# to cleanly handle the fact that we may be in the initial position during the motion primitive, add [0,0] as element in each motion primitive
+	for i in range(len(obstacles_motion_primitives_list)):
+		oneObstaclePrimitives = obstacles_motion_primitives_list[i]
+		for j in range(len(oneObstaclePrimitives)):
+			onePrimitive = oneObstaclePrimitives[j]
+			obstacles_motion_primitives_list[i][j] = [[0,0]] + onePrimitive
+
+	currPositions = []
+	for i in range(len(obstacles_initial)):
+		currPositions.append([obstacles_initial[i]]) # form will be [[obstacle 0 pos 0],[obstacle 1 pos 0], ...], xy form
+
+	for i in range(allowedSteps):
+		thisStepPositions = set() # form will be [possible pos 0, possible pos 1, ...], combined form
+		newCurrPositions = []
+		for j in range(len(currPositions)):
+			oneObstaclePositions = currPositions[j]
+			oneObstacleMotionPrimatives = obstacles_motion_primitives_list[j]
+			oneObstacleNewCurrPositions = []
+			for k in range(len(oneObstaclePositions)):
+				oneObstaclePosition = oneObstaclePositions[k]
+				for l in range(len(oneObstacleMotionPrimatives)):
+					onePrimitive = oneObstacleMotionPrimatives[l]
+					finalPos = onePrimitive[-1]
+					finalPositionForThisStartingPositionAndThisPrimitive = update(oneObstaclePosition, finalPos, dimensions[0], dimensions[1])
+					oneObstacleNewCurrPositions.append(finalPositionForThisStartingPositionAndThisPrimitive)
+					# and this primitive will have a number of possible places through which the obstacle may travel
+					for m in range(len(onePrimitive)):
+						oneIntermediatePosition = onePrimitive[m]
+						newCoords = update(oneObstaclePosition, oneIntermediatePosition, dimensions[0], dimensions[1])
+						possiblePosition = coordsToPoint(newCoords[0], newCoords[1])
+						thisStepPositions.add(possiblePosition)
+			newCurrPositions.append(oneObstacleNewCurrPositions)
+
+		output.append(thisStepPositions)
+		currPositions = newCurrPositions
+
+	for i in range(len(output)):
+		print i, output[i]
+	print "*********"
+
+	return output
+
 def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	global initial, dimensions, target, motion_primitives, obstacles_initial, obstacles_motion_primitives_list
 	dimensions = d
@@ -188,6 +246,10 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	#assumption is that the obstacle can be in any of those intermediate positions if gets to the given final position
 	#that way we won't have to deal later with the fact that we mustn't intercept with either, once we've found one primitive
 	#that matches the move, we don't have to look for others, don't have to handle two or more
+
+	obstaclePositionsAtEachStep = findPossibleObstaclePositionsAtEachStep(obstacles_initial, obstacles_motion_primitives_list, allowedSteps, dimensions)
+	#print obstaclePositionsAtEachStep
+
 	obstacleMoves = ""
 	for i in range(len(obstacles_motion_primitives_list)):
 		obstacles_motion_primitives_list[i] = consolidateMotionPrimitives(obstacles_motion_primitives_list[i])
@@ -309,7 +371,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 def genBenchmarks():
 	motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
 
-	if False: # don't need these for now
+	if True: # don't need these for now
 		# Dimensions benchmarks
 		initial = (1,0)
 		target = (4,2)
@@ -333,6 +395,7 @@ def genBenchmarks():
 			obstacles_initial.append([i, 19])
 			obstacles_motion_primitives_list.append([[[0,1]],[[0,-1]]])
 		for i in range(5, 55, 5):
+			print "************ ", i
 			oi = obstacles_initial[:i]
 			ompl = obstacles_motion_primitives_list[:i]
 			generateConstraints("generatedBenchmarks/numobstacles_"+str(i)+"_30-5-"+str(i)+"-4.sl", dimensions, initial, target, maxSteps, motion_primitives, oi, ompl)
@@ -363,7 +426,7 @@ def genBenchmarks():
 		obstacles_motion_primitives_list.append([[]])
 		#obstacles_motion_primitives_list.append([[[0,0]]])
 	for i in range(5, 45, 5):
-		generateConstraints("generatedBenchmarks/numsteps_"+str(i)+"_10-"+str(i)+"-5-4.sl", dimensions, initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
+		generateConstraints("generatedBenchmarks/numsteps_"+str(i)+"_10-"+str(i)+"-5-4.sl", dimensions, initial, target, i, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
 
 	# Depth benchmarks
 	dimensions = [5,5]
