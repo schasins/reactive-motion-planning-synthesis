@@ -90,23 +90,15 @@ def generateNoOveralap(fun_name, motion_primitives, obstacle_motion_primitives):
 
 def generateNoOverlapsOneStep(numObstacles):
 	#helper func
-	string="(define-fun no-overlaps-one-step-helper ((currPoint Int) (move Int)"
+	string="(define-fun no-overlaps-one-step ((currPoint Int) (move Int)"
 	for i in range(numObstacles):
-		string+= " (o"+str(i)+"-t Int) (o"+str(i)+"move Int)"
+		string+= " (o"+str(i)+"pos Int) (o"+str(i)+"move Int)"
 	string+=") Bool\n\t"
 	noOverlaps=[]
 	for i in range(numObstacles):
-		noOverlaps.append("(no-overlaps-"+str(i)+" currPoint move o"+str(i)+"-t o"+str(i)+"move)")
+		noOverlaps.append("(no-overlaps-"+str(i)+" currPoint move o"+str(i)+"pos o"+str(i)+"move)")
 	string+=andItems(noOverlaps)+")\n\n"
 
-	#outer func
-	string+="(define-fun no-overlaps-one-step ((currPoint Int) (move Int) "
-	for i in range(numObstacles):
-		string+=" (o"+str(i)+"-0 Int) (o"+str(i)+"-1 Int)"
-	string+=") Bool\n\t(no-overlaps-one-step-helper currPoint move"
-	for i in range(numObstacles):
-		string+=" o"+str(i)+"-0 (get-move-obstacle-"+str(i)+" o"+str(i)+"-0 o"+str(i)+"-1)"
-	string+="))\n\n"
 	return string
 
 def generateInterpretMove(fun_name, motion_primitives):
@@ -274,14 +266,6 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 		newMoves = generateInterpretMove("interpret-move-obstacle-"+(str(i)), obstacles_motion_primitives_list[i])
 		obstacleMoves+=newMoves
 
-	obstacleAllowableMoves = ""
-	for i in range(len(obstacles_initial)):
-		obstacleAllowableMoves += generateAllowableMoves("allowable-move-obstacle-"+str(i),"interpret-move-obstacle-"+(str(i)),len(obstacles_motion_primitives_list[i]))
-
-	obstacleGetMove = ""
-	for i in range(len(obstacles_initial)):
-		obstacleGetMove += generateGetObstacleMove("get-move-obstacle-"+str(i),"interpret-move-obstacle-"+(str(i)),len(obstacles_motion_primitives_list[i]))
-
 	obstacleNoOverlaps = ""
 	for i in range(len(obstacles_initial)):
 		obstacleNoOverlaps+= generateNoOveralap("no-overlaps-"+str(i), motion_primitives, obstacles_motion_primitives_list[i])
@@ -290,12 +274,12 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 
 	moveCombinations = ("\n\n").join(combinationFunctions.values()) #combinationFunctions have been generated over the course of making the no overlaps code
 
-	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+obstacleAllowableMoves+obstacleGetMove+moveCombinations+obstacleNoOverlaps+obstaclesNoOverlapsOneStep+"\n\n"
+	macros = getYCoordHelperFunction+getXCoordHelperFunction+robotMoves+obstacleMoves+moveCombinations+obstacleNoOverlaps+obstaclesNoOverlapsOneStep+"\n\n"
 
-	obstaclePositions = ""
+	obstacleMoves = ""
 	for i in range(len(obstacles_initial)):
 		for j in range(allowedSteps):
-			obstaclePositions+="(declare-var o"+str(i)+"-move"+str(j+1)+" Int)\n"
+			obstacleMoves+="(declare-var o"+str(i)+"-move"+str(j+1)+" Int)\n"
 
 	solution = """
 	(define-fun soln ((currPoint Int)) Int
@@ -329,11 +313,25 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 		(>=  CondInt CondInt))))) \n \n """
 
 	f.write(macros)
-	f.write(obstaclePositions)
+	f.write(obstacleMoves)
 
 	#f.write(solution)
 	f.write(grammar)
 	#f.write(grammar2)
+
+	#let's constrain those obstacleMoves
+	stringsToAnd = []
+	for i in range(len(obstacles_motion_primitives_list)):
+		for j in range(allowedSteps):
+			movName = "o"+str(i)+"-move"+str(j+1)
+			stringsToOr = []
+			for k in range(len(obstacles_motion_primitives_list[i])):
+				# each k is one allowed motion primitive
+				stringsToOr.append("(= "+movName+" "+str(k)+")")
+			stringsToAnd.append(orItems(stringsToOr))
+	constraintOnObstacleMoves = andItems(stringsToAnd)
+
+	f.write("(constraint "+constraintOnObstacleMoves+")\n\n")
 
 	obstacles = []
 	for i in range(len(obstacles_initial)):
@@ -363,13 +361,6 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 
 	correctProgConstraint = "(= pos"+str(allowedSteps)+" "+str(coordsToPoint(target[0],target[1]))+")"
 
-	allowableObstacleMoves = []
-	for i in range(len(obstacles)):
-		obstaclePlaces = obstacles[i]
-		for j in range(len(obstaclePlaces)-1):
-			allowableObstacleMoves.append("(allowable-move-obstacle-"+str(i)+" "+obstaclePlaces[j]+" "+obstaclePlaces[j+1]+")")
-	allowableObstacleMovesConstraint = andItems(allowableObstacleMoves)
-
 	noOverlapItems = []
 	for i in range(allowedSteps):
 		string = "(no-overlaps-one-step pos"+str(i)+" mov"+str(i)
@@ -379,7 +370,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 		noOverlapItems.append(string)
 	noOverlapsConstraint = andItems(noOverlapItems)
 
-	f.write("(constraint "+lets+" (or \n\t(and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")\n\t(not "+allowableObstacleMovesConstraint+"))"+letsEnd+")")
+	f.write("(constraint "+lets+" (and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")"+letsEnd+")")
 	
 	#f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
 
