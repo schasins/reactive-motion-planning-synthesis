@@ -15,5 +15,5 @@ for entry in `ls generatedBenchmarks`; do
 	done
 	
 	JOINED=`join , "${ARRAY[@]}"`
-	echo $entry,$JOINED
+	echo $entry,$JOINED,"\n\\"
 done
