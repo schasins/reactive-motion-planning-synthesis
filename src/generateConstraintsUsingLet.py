@@ -253,8 +253,6 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 			stringsToAnd.append(orItems(stringsToOr))
 	constraintOnObstacleMoves = andItems(stringsToAnd)
 
-	f.write("(constraint "+constraintOnObstacleMoves+")\n\n")
-
 	obstacles = []
 	for i in range(len(obstacles_initial)):
 		obstacles.append([str(coordsToPoint(obstacles_initial[i][0],obstacles_initial[i][1]))])
@@ -307,7 +305,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 		noOverlapItems.append(string)
 	noOverlapsConstraint = andItems(noOverlapItems)
 
-	f.write("(constraint "+letsForObstacles+lets+" (and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")"+letsEnd+letsForObstaclesEnd+")")
+	f.write("(constraint\n\t(or\n\t\t(not "+constraintOnObstacleMoves+")\n\n\t"+letsForObstacles+lets+"\n\t(and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")"+letsEnd+letsForObstaclesEnd+"))")
 	
 	#f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
 
