@@ -201,7 +201,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	obstacleMoves = ""
 	for i in range(len(obstacles_initial)):
 		for j in range(allowedSteps):
-			obstacleMoves+="(declare-var o"+str(i)+"-move"+str(j)+" Int)\n"
+			obstacleMoves+="(declare-var o"+str(i)+"-mov"+str(j)+" Int)\n"
 
 	solution = """
 	(define-fun soln ((currPoint Int)) Int
@@ -245,7 +245,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	stringsToAnd = []
 	for i in range(len(obstacles_motion_primitives_list)):
 		for j in range(allowedSteps):
-			movName = "o"+str(i)+"-move"+str(j)
+			movName = "o"+str(i)+"-mov"+str(j)
 			stringsToOr = []
 			for k in range(len(obstacles_motion_primitives_list[i])):
 				# each k is one allowed motion primitive
