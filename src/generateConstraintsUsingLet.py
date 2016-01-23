@@ -245,7 +245,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	stringsToAnd = []
 	for i in range(len(obstacles_motion_primitives_list)):
 		for j in range(allowedSteps):
-			movName = "o"+str(i)+"-move"+str(j+1)
+			movName = "o"+str(i)+"-move"+str(j)
 			stringsToOr = []
 			for k in range(len(obstacles_motion_primitives_list[i])):
 				# each k is one allowed motion primitive
