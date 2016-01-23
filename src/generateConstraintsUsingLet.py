@@ -12,19 +12,6 @@ maxSteps = 7
 def coordsToPoint(x,y):
 	return y*dimensions[0]+x
 
-def update(coords, relativePosition, xLimit, yLimit):
-	x = coords[0]+relativePosition[0]
-	y = coords[1]+relativePosition[1]
-	if x < 0:
-		x = 0
-	elif x > (xLimit - 1):
-		x = xLimit - 1
-	if y < 0:
-		y = 0
-	elif y > (yLimit - 1):
-		y = yLimit - 1
-	return (x,y)
-
 def andItems(ls):
 	if (len(ls) == 0):
 		print "tried to and something empty.  don't know what to do."
@@ -156,69 +143,6 @@ def consolidateMotionPrimitives(motion_primitives):
 		final_primitives.append(motion_primitives[i])
 	return final_primitives
 
-#test
-#print [[1, 0], [0, 1], [1, 1]] in consolidateMotionPrimitives([[[0,0]],[[0,1],[1,1]],[[1,0],[1,1]],[[0,-1]],[[-1,0]]])
-
-def generateAllowableMoves(funName, interpretFunName, numMoves):
-	string = "(define-fun "+funName+" (( start Int ) ( end Int)) Bool"
-	for i in range(numMoves):
-		string+="\n\t(or (= ("+interpretFunName+" start "+str(i)+") end)"
-	string+=" false"
-	for i in range(numMoves):
-		string+=")"
-	return string+")\n\n"
-
-def generateGetObstacleMove(funName, interpretFunName, numMoves):
-	string = "(define-fun "+funName+" (( start Int ) ( end Int)) Int"
-	for i in range(numMoves):
-		string+="\n\t(ite (= ("+interpretFunName+" start "+str(i)+") end) "+str(i)+" "
-	string+=" -1"
-	for i in range(numMoves):
-		string+=")"
-	return string+")\n\n"
-
-def findPossibleObstaclePositionsAtEachStep(obstacles_initial, obstacles_motion_primitives_list, allowedSteps, dimensions):
-	# produces list of lists of possible positions
-	output = []
-
-	# to cleanly handle the fact that we may be in the initial position during the motion primitive, add [0,0] as element in each motion primitive
-	for i in range(len(obstacles_motion_primitives_list)):
-		oneObstaclePrimitives = obstacles_motion_primitives_list[i]
-		for j in range(len(oneObstaclePrimitives)):
-			onePrimitive = oneObstaclePrimitives[j]
-			obstacles_motion_primitives_list[i][j] = [[0,0]] + onePrimitive
-
-	currPositions = []
-	for i in range(len(obstacles_initial)):
-		currPositions.append([(obstacles_initial[i][0], obstacles_initial[i][1])]) # form will be [[obstacle 0 pos 0],[obstacle 1 pos 0], ...], xy form
-
-	for i in range(allowedSteps):
-		thisStepPositions = set() # form will be [possible pos 0, possible pos 1, ...], combined form
-		newCurrPositions = []
-		for j in range(len(currPositions)):
-			oneObstaclePositions = currPositions[j]
-			oneObstacleMotionPrimatives = obstacles_motion_primitives_list[j]
-			oneObstacleNewCurrPositions = set()
-			for k in range(len(oneObstaclePositions)):
-				oneObstaclePosition = oneObstaclePositions[k]
-				for l in range(len(oneObstacleMotionPrimatives)):
-					onePrimitive = oneObstacleMotionPrimatives[l]
-					finalPos = onePrimitive[-1]
-					finalPositionForThisStartingPositionAndThisPrimitive = update(oneObstaclePosition, finalPos, dimensions[0], dimensions[1])
-					oneObstacleNewCurrPositions.add(finalPositionForThisStartingPositionAndThisPrimitive)
-					# and this primitive will have a number of possible places through which the obstacle may travel
-					for m in range(len(onePrimitive)):
-						oneIntermediatePosition = onePrimitive[m]
-						newCoords = update(oneObstaclePosition, oneIntermediatePosition, dimensions[0], dimensions[1])
-						possiblePosition = coordsToPoint(newCoords[0], newCoords[1])
-						thisStepPositions.add(possiblePosition)
-			newCurrPositions.append(list(oneObstacleNewCurrPositions))
-
-		output.append(thisStepPositions)
-		currPositions = newCurrPositions
-
-	return output
-
 def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	global initial, dimensions, target, motion_primitives, obstacles_initial, obstacles_motion_primitives_list, combinationFunctions
 	combinationFunctions = {}
@@ -258,8 +182,6 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	#that way we won't have to deal later with the fact that we mustn't intercept with either, once we've found one primitive
 	#that matches the move, we don't have to look for others, don't have to handle two or more
 
-	#obstaclePositionsAtEachStep = findPossibleObstaclePositionsAtEachStep(obstacles_initial, obstacles_motion_primitives_list, allowedSteps, dimensions)
-
 	obstacleMoves = ""
 	for i in range(len(obstacles_motion_primitives_list)):
 		obstacles_motion_primitives_list[i] = consolidateMotionPrimitives(obstacles_motion_primitives_list[i])
@@ -279,7 +201,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	obstacleMoves = ""
 	for i in range(len(obstacles_initial)):
 		for j in range(allowedSteps):
-			obstacleMoves+="(declare-var o"+str(i)+"-move"+str(j+1)+" Int)\n"
+			obstacleMoves+="(declare-var o"+str(i)+"-move"+str(j)+" Int)\n"
 
 	solution = """
 	(define-fun soln ((currPoint Int)) Int
@@ -337,7 +259,22 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	for i in range(len(obstacles_initial)):
 		obstacles.append([str(coordsToPoint(obstacles_initial[i][0],obstacles_initial[i][1]))])
 		for j in range(allowedSteps):
-			obstacles[i].append("o"+str(i)+"-"+str(j+1))
+			obstacles[i].append("o"+str(i)+"-pos"+str(j+1))
+
+	letsForObstacles = ""
+	for i in range(allowedSteps):
+		letsForObstacles +=" (let ("
+		for j in range(len(obstacles)):
+			letsForObstacles+=" (o"+str(j)+"-pos"+str(i)+" Int "
+			if i == 0:
+				letsForObstacles+= str(coordsToPoint(obstacles_initial[j][0],obstacles_initial[j][1]))
+			else:
+				letsForObstacles+= "(interpret-move-obstacle-"+str(j)+" o"+str(j)+"-pos"+str(i-1)+" o"+str(j)+"-mov"+str(i-1)+")"
+			letsForObstacles+=")"
+		letsForObstacles += ")"
+	letsForObstacles+="\n"
+
+	letsForObstaclesEnd = ")"*allowedSteps
 
 	lets = ""
 	for i in range(allowedSteps+1):
@@ -365,12 +302,12 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 	for i in range(allowedSteps):
 		string = "(no-overlaps-one-step pos"+str(i)+" mov"+str(i)
 		for j in range(len(obstacles)):
-			string+=" "+obstacles[j][i]+" "+obstacles[j][i+1]
+			string+=" "+obstacles[j][i]+" o"+str(j)+"-mov"+str(i)
 		string+=")"
 		noOverlapItems.append(string)
 	noOverlapsConstraint = andItems(noOverlapItems)
 
-	f.write("(constraint "+lets+" (and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")"+letsEnd+")")
+	f.write("(constraint "+letsForObstacles+lets+" (and\n\t\t"+correctProgConstraint+"\n\t\t"+noOverlapsConstraint+")"+letsEnd+letsForObstaclesEnd+")")
 	
 	#f.write("(constraint (= (all-moves "+str(coordsToPoint(initial[0],initial[1]))+") "+str(coordsToPoint(target[0],target[1]))+"))")
 
