@@ -231,8 +231,7 @@ def generateConstraints(filename, d, i, t, allowedSteps, mp, oi, ompl):
 		(or  StartBool StartBool)
 		(not StartBool)
 		(<=  CondInt CondInt)
-		(=   CondInt CondInt)
-		(>=  CondInt CondInt))))) \n \n """
+		(=   CondInt CondInt))))) \n \n """
 
 	f.write(macros)
 	f.write(obstacleMoves)
@@ -372,6 +371,22 @@ def genBenchmarks():
 		generateConstraints("generatedBenchmarks/numsteps_"+str(i)+"_10-"+str(i)+"-5-4.sl", dimensions, initial, target, i, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
 
 	# Depth benchmarks
+	dimensions = [6,6]
+	initials = [(0,0), (0,0), (1,0), (3,0)]
+	targets = [(5,0), (4,0), (4,1), (3,2)]
+	depths = [1, 4, 5, 6]
+	obstacles_initial = [(0,1), (1,1), (2,1), (3,1)]
+	obstacles_motion_primitives_list = []
+	maxSteps = 5
+	for i in range(len(obstacles_initial)):
+		obstacles_motion_primitives_list.append([[[0,0]]])
+	for i in range(len(initials)):
+		initial = initials[i]
+		target = targets[i]
+		depth = str(depths[i])
+		generateConstraints("generatedBenchmarks/zdepth_"+depth+"_6-5-4-"+depth+".sl", dimensions, initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
+
+	# original Depth benchmarks
 	dimensions = [5,5]
 	initials = [(0,0), (0,0), (3,0), (3,0)]
 	targets = [(4,0), (3,0), (4,1), (3,2)]
