@@ -1,5 +1,21 @@
 import sys
 
+#depth 5 setup
+
+# original Depth benchmarks
+dimensions = (6,6)
+initial = (1,0)
+#target = (3,0)
+target = (4,1)
+obstacles_initial = [(0,1), (1,1), (2,1), (3,1)]
+obstacles_motion_primitives_list = []
+maxSteps = 5
+motion_primitives = [[[0,0]],[[0,1]],[[1,0]],[[0,-1]],[[-1,0]]]
+for i in range(len(obstacles_initial)):
+        obstacles_motion_primitives_list.append([[[0,0]]])
+        
+
+"""
 dimensions = (10,10)
 initial = (0,0)
 target = (1,1)
@@ -10,7 +26,7 @@ obstacles_motion_primitives_list = [
         [[[0,0]],[[0,1]],[[0,-1]]]  #second obstacle
 ]
 maxSteps = 3
-
+"""
 #code from testing
 """
 dimensions = (13,6)
@@ -272,8 +288,7 @@ def generateConstraints(allowedSteps):
 		(or  StartBool StartBool)
 		(not StartBool)
 		(<=  CondInt CondInt)
-		(=   CondInt CondInt)
-		(>=  CondInt CondInt))))) \n \n """
+		(=   CondInt CondInt))))) \n \n """
 
 	f.write(macros)
 	f.write(obstaclePositions)

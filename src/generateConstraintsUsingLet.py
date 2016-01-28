@@ -323,8 +323,8 @@ def genBenchmarks():
 	for i in range(5):
 		obstacles_initial.append([0,i])
 		obstacles_motion_primitives_list.append([[[0,1]],[[0,-1]]])
-	for i in range(5, 55, 5):
-		generateConstraints(("generatedBenchmarks/dimensions_%02d_%02d-5-5-4.sl" % (i,i)), [i,i], initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
+	for i in range(25, 225, 25):
+		generateConstraints(("generatedBenchmarks/dimensions_%03d_%03d-5-5-4.sl" % (i,i)), [i,i], initial, target, maxSteps, motion_primitives, obstacles_initial, obstacles_motion_primitives_list)
 
 	# Num obstacles benchmarks
 	dimensions = [20,20]
