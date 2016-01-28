@@ -5,8 +5,8 @@ import sys
 # original Depth benchmarks
 dimensions = (6,6)
 initial = (1,0)
-#target = (3,0)
-target = (4,1)
+target = (3,0)
+#target = (4,1)
 obstacles_initial = [(0,1), (1,1), (2,1), (3,1)]
 obstacles_motion_primitives_list = []
 maxSteps = 5
@@ -203,7 +203,7 @@ def generateGetObstacleMove(funName, interpretFunName, numMoves):
 	return string+")\n\n"
 
 def generateConstraints(allowedSteps):
-	f = open('constraints.sl','w')
+	f = open('constraints-4.sl','w')
 	f.write('(set-logic LIA)\n')
 
 	width = str(dimensions[0])
