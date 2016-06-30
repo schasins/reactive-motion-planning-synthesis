@@ -1,0 +1,88 @@
+<html>
+  <head>
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/mathjs/2.6.0/math.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('number', 'x');
+        data.addColumn('number', 'values');
+        data.addColumn({id:'lowstd', type:'number', role:'interval'});
+        data.addColumn({id:'highstd', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+
+        var rawDataString = "dimensions_05_05-5-5-4.sl,17230443463,17033501236,17091092799,17011681285,17051552639\n\
+dimensions_15_15-5-5-4.sl,27289802204,27204038064,27316549300,27245385347,27296676897\n\
+dimensions_25_25-5-5-4.sl,30555098940,30762802885,30355319630,30413848260,30490729233\n\
+dimensions_35_35-5-5-4.sl,44882064035,44875710864,44795351708,44825278562,44966444635\n\
+dimensions_45_45-5-5-4.sl,65410969082,65309925390,65597029946,65590421035,65480378062\n\
+dimensions_55_55-5-5-4.sl,84759012371,84720639596,84590715610,84648323602,84451589807";
+
+        var rawData = rawDataString.split("\n");
+        for (var i = 0; i < rawData.length; i++){
+            var items = rawData[i].split(",");
+            var label = items[0].split("_")[1];
+            var newRow = _.map([label].concat(items.slice(1, items.length)), function(item){return parseInt(item);});
+            rawData[i] = newRow;
+        }
+
+        for (var i = 0; i < rawData.length; i++){
+            var row = rawData[i];
+            var vals = row.slice(1,row.length);
+            vals = _.map(vals, function(val){return val/Math.pow(10,9);});
+            var mean = math.mean(vals);
+            var stddev = math.std(vals);
+            rawData[i] = [row[0]].concat([mean, mean - stddev, mean + stddev]).concat(vals);
+        }
+
+        data.addRows(rawData);
+  
+        // The intervals data as narrow lines (useful for showing raw source data)
+        var options_lines = {
+            lineWidth: 4,
+            interval: { 'mean': { 'style':'line' }},
+            legend: 'none',
+            series: [{'color': '#D3362D'}],
+            intervals: { 'lineWidth':1.5, 'barWidth': 0.2 },
+            interval: {
+                'i2': { 'style':'points', 'color':'grey', 'pointSize': 10,
+                'lineWidth': 0, 'fillOpacity': 0.3 }
+            },
+            hAxis: {
+                viewWindow: {
+                    min: 0,
+                    max: 60
+                },
+                title: "Environment Dimensions",
+                format:'##^2'
+            },
+            vAxis: {
+                title: "Synthesis Time (in Seconds)"
+            },
+            chartArea: {
+                backgroundColor: {
+                    strokeWidth: 1,
+                    stroke: '#000000'
+                }
+            }
+
+        };
+  
+        var chart_lines = new google.visualization.LineChart(document.getElementById('chart_lines'));
+        chart_lines.draw(data, options_lines);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chart_lines" style="width: 900px; height: 500px;"></div>
+  </body>
+</html>

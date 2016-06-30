@@ -1,0 +1,76 @@
+<html>
+  <head>
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/mathjs/2.6.0/math.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'x');
+        data.addColumn('number', 'values');
+        data.addColumn({type: 'string', role:'annotation'});
+
+        timeout = 30*60; // 30 mins
+        stochasticTime = timeout;
+        enumerativeTime = 16*60+43.407;
+        enumerativeTime15 = 13*60+24.866;
+
+        console.log(enumerativeTime/enumerativeTime15, (enumerativeTime/enumerativeTime15)-1);
+
+        var dataTab = [["Stochastic 2014", stochasticTime, "timeout"],
+                        ["Enumerative 2014", enumerativeTime, (""+enumerativeTime/60).slice(0,6)+" min"],
+                        ["Enumerative 2015", enumerativeTime15, (""+enumerativeTime15/60).slice(0,6)+" min"]];
+
+        data.addRows(dataTab);
+  
+        // The intervals data as narrow lines (useful for showing raw source data)
+        var options_lines = {
+            lineWidth: 0,
+            interval: { 'mean': { 'style':'bar' }},
+            legend: 'none',
+            series: [{'color': '#D3362D'}],
+            intervals: { 'lineWidth':1.5, 'barWidth': 0.2 },
+            interval: {
+                'i2': { 'style':'points', 'color':'grey', 'pointSize': 10,
+                'lineWidth': 0, 'fillOpacity': 0.3 }
+            },
+            hAxis: {
+                viewWindow: {
+                    min: 0
+                },
+                title: "SyGuS Solver"
+            },
+            vAxis: {
+                title: "Synthesis Time (in Seconds)",
+                viewWindow: {
+                    max: timeout
+                },
+            },
+            chartArea: {
+                backgroundColor: {
+                    strokeWidth: 1,
+                    stroke: '#000000'
+                }
+            },
+            series: {5: {
+              type: "steppedArea", 
+              color: '#FF0000', 
+              visibleInLegend: false, 
+              areaOpacity: 0}
+            }
+
+        };
+  
+        var chart_lines = new google.visualization.ColumnChart(document.getElementById('chart_lines'));
+        chart_lines.draw(data, options_lines);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chart_lines" style="width: 900px; height: 500px;"></div>
+  </body>
+</html>

@@ -1,0 +1,91 @@
+<html>
+  <head>
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/mathjs/2.6.0/math.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('number', 'x');
+        data.addColumn('number', 'values');
+        data.addColumn({id:'lowstd', type:'number', role:'interval'});
+        data.addColumn({id:'highstd', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+        data.addColumn({id:'i2', type:'number', role:'interval'});
+
+        var rawDataString = "numobstacles_5_20-5-5-4.sl,40015925617,37959942230,37914167399,38052305701,37690052515\n\
+numobstacles_10_20-5-10-4.sl,243862942698,242065225775,243038545560,242298304353,243983213806\n\
+numobstacles_15_20-5-15-4.sl,579270143038,574903688733,575562976828,578351367193,578114366212\n\
+numobstacles_20_20-5-20-4.sl,1218737610640,1199289464781,1215237979503,1200781054612,1205947860321\n\
+numobstacles_25_20-5-25-4.sl,1846744727755,1813589853030,1799209153755,1824742605684,1798402871556\n\
+numobstacles_30_20-5-30-4.sl,3356198274060,3339904749690,3377104794948,3358396200027,3353056690512\n\
+numobstacles_35_20-5-35-4.sl,5004016908611,4836905354232,4852056071619,4947756105374,4972385721461\n\
+numobstacles_40_20-5-40-4.sl,7436015951041,7330346644158,7376769233512,7464662142114,7289222451367\n\
+numobstacles_45_20-5-45-4.sl,8603362179892,8514694540633,8821517653701,9025397069230,8555546879424\n\
+numobstacles_50_20-5-50-4.sl,9623238344737,9562968848950,9197703705006,9843637835378,9462467168575";
+
+        var rawData = rawDataString.split("\n");
+        for (var i = 0; i < rawData.length; i++){
+            var items = rawData[i].split(",");
+            var label = items[0].split("_")[1];
+            var newRow = _.map([label].concat(items.slice(1, items.length)), function(item){return parseInt(item);});
+            rawData[i] = newRow;
+        }
+
+        for (var i = 0; i < rawData.length; i++){
+            var row = rawData[i];
+            var vals = row.slice(1,row.length);
+            vals = _.map(vals, function(val){return val/Math.pow(10,9);});
+            var mean = math.mean(vals);
+            var stddev = math.std(vals);
+            rawData[i] = [row[0]].concat([mean, mean - stddev, mean + stddev]).concat(vals);
+        }
+
+        data.addRows(rawData);
+  
+        // The intervals data as narrow lines (useful for showing raw source data)
+        var options_lines = {
+            lineWidth: 4,
+            interval: { 'mean': { 'style':'line' }},
+            legend: 'none',
+            series: [{'color': '#D3362D'}],
+            intervals: { 'lineWidth':1.5, 'barWidth': 0.2 },
+            interval: {
+                'i2': { 'style':'points', 'color':'grey', 'pointSize': 10,
+                'lineWidth': 0, 'fillOpacity': 0.3 }
+            },
+            hAxis: {
+                viewWindow: {
+                    min: 0,
+                    max: 55
+                },
+                title: "Number of Moving Obstacles in the Environment"
+            },
+            vAxis: {
+                title: "Synthesis Time (in Seconds)"
+            },
+            chartArea: {
+                backgroundColor: {
+                    strokeWidth: 1,
+                    stroke: '#000000'
+                }
+            }
+
+        };
+  
+        var chart_lines = new google.visualization.LineChart(document.getElementById('chart_lines'));
+        chart_lines.draw(data, options_lines);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="chart_lines" style="width: 900px; height: 500px;"></div>
+  </body>
+</html>
